@@ -1,15 +1,8 @@
-import LancamentosClient from './LancamentosClient';
 import { getRequestContext } from '@cloudflare/next-on-pages';
 import { getDb } from '@/db';
 import { sectors, daily_reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import type { D1Database } from '@cloudflare/workers-types';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: "Lançamentos | Prado Trocas",
-  description: "Lançamentos de trocas diárias por setor.",
-};
 
 const FALLBACK_SECTORS = [
   { id: 1, nome: 'Açougue', meta: 15000, realizado: 14250 },
@@ -19,7 +12,7 @@ const FALLBACK_SECTORS = [
   { id: 5, nome: 'Mercearia', meta: 13000, realizado: 13930 },
 ];
 
-export default async function LancamentosPage() {
+export async function getDashboardData() {
   const today = new Date().toISOString().split('T')[0];
   let sectorsWithData = FALLBACK_SECTORS;
 
@@ -44,5 +37,5 @@ export default async function LancamentosPage() {
     sectorsWithData = FALLBACK_SECTORS;
   }
 
-  return <LancamentosClient initialSectors={sectorsWithData} date={today} />;
+  return { sectors: sectorsWithData, date: today };
 }

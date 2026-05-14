@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-
+import { formatCurrency } from '@/lib/format';
+import Card from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
+import { PlusIcon, EditIcon, DeleteIcon, CheckIcon } from '@/components/icons';
 interface Setor {
   id: number;
   nome: string;
@@ -34,9 +39,6 @@ export default function DepartamentosPage() {
   const [showForm, setShowForm] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
-
-  const fmt = (v: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
   function openNew() {
     setForm(EMPTY_FORM);
@@ -88,7 +90,6 @@ export default function DepartamentosPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Topbar */}
       <div className="h-20 border-b border-gray-200 flex items-center justify-between px-8 bg-white">
         <div>
           <h1 className="text-[22px] font-bold text-[#1f2937] tracking-wide uppercase leading-tight">
@@ -99,40 +100,31 @@ export default function DepartamentosPage() {
         <div className="flex items-center gap-3">
           {saved && (
             <span className="text-xs text-[#16a34a] flex items-center gap-1.5 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Salvo com sucesso
+              <CheckIcon /> Salvo com sucesso
             </span>
           )}
-          <button
-            onClick={openNew}
-            className="px-5 py-2 text-sm font-semibold bg-[#1e40af] hover:bg-[#1e3a8a] text-white rounded flex items-center gap-2 transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-            Novo Departamento
-          </button>
+          <Button onClick={openNew} leftIcon={<PlusIcon />}>Novo Departamento</Button>
         </div>
       </div>
 
       <div className="flex-1 p-8 space-y-6">
-        {/* Resumo */}
         <div className="grid grid-cols-3 gap-5">
-          <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <Card variant="default">
             <h3 className="text-xs font-semibold text-[#6b7280] uppercase tracking-wide mb-2">Departamentos Ativos</h3>
             <p className="text-4xl font-bold text-[#1f2937]">{setores.filter(s => s.ativo).length}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          </Card>
+          <Card variant="default">
             <h3 className="text-xs font-semibold text-[#6b7280] uppercase tracking-wide mb-2">Meta Global Diária</h3>
-            <p className="text-2xl font-bold text-[#1e40af]">{fmt(totalMeta)}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+            <p className="text-2xl font-bold text-[#1e40af]">{formatCurrency(totalMeta)}</p>
+          </Card>
+          <Card variant="default">
             <h3 className="text-xs font-semibold text-[#6b7280] uppercase tracking-wide mb-2">Compradores Vinculados</h3>
             <p className="text-4xl font-bold text-[#1f2937]">
               {new Set(setores.map(s => s.comprador).filter(Boolean)).size}
             </p>
-          </div>
+          </Card>
         </div>
 
-        {/* Tabela de Setores */}
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
           <div className="p-5 border-b border-gray-100">
             <h2 className="text-base font-semibold text-[#1f2937]">Lista de Departamentos</h2>
@@ -151,41 +143,29 @@ export default function DepartamentosPage() {
               {setores.map((setor) => (
                 <tr key={setor.id} className={`transition-colors ${setor.ativo ? 'hover:bg-gray-50' : 'opacity-50'}`}>
                   <td className="px-6 py-4 font-semibold text-[#1f2937]">{setor.nome}</td>
-                  <td className="px-6 py-4 text-[#1e40af] font-bold">{fmt(setor.meta)}</td>
+                  <td className="px-6 py-4 text-[#1e40af] font-bold">{formatCurrency(setor.meta)}</td>
                   <td className="px-6 py-4 text-[#6b7280]">
                     {setor.comprador || <span className="italic text-[#9ca3af]">Não atribuído</span>}
                   </td>
                   <td className="px-6 py-4 text-center">
                     {setor.ativo
-                      ? <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200">Ativo</span>
-                      : <span className="px-3 py-1 bg-gray-100 text-[#6b7280] text-xs font-bold rounded-full border border-gray-200">Inativo</span>
+                      ? <Badge variant="success" size="sm">Ativo</Badge>
+                      : <Badge variant="info" size="sm">Inativo</Badge>
                     }
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => openEdit(setor)}
-                        title="Editar"
-                        className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-[#1e40af] hover:border-[#1e40af] transition-colors"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      <button onClick={() => openEdit(setor)} title="Editar" className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-[#1e40af] hover:border-[#1e40af] transition-colors">
+                        <EditIcon />
                       </button>
-                      <button
-                        onClick={() => handleToggleAtivo(setor.id)}
-                        title={setor.ativo ? 'Desativar' : 'Ativar'}
-                        className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-[#ffcc00] hover:border-[#ffcc00] transition-colors"
-                      >
+                      <button onClick={() => handleToggleAtivo(setor.id)} title={setor.ativo ? 'Desativar' : 'Ativar'} className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-[#ffcc00] hover:border-[#ffcc00] transition-colors">
                         {setor.ativo
                           ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="12" x="2" y="6" rx="6"/><circle cx="16" cy="12" r="2" fill="currentColor"/></svg>
                           : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="12" x="2" y="6" rx="6"/><circle cx="8" cy="12" r="2" fill="currentColor"/></svg>
                         }
                       </button>
-                      <button
-                        onClick={() => setDeleteId(setor.id)}
-                        title="Excluir"
-                        className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-red-600 hover:border-red-400 transition-colors"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                      <button onClick={() => setDeleteId(setor.id)} title="Excluir" className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-red-600 hover:border-red-400 transition-colors">
+                        <DeleteIcon />
                       </button>
                     </div>
                   </td>
@@ -196,96 +176,80 @@ export default function DepartamentosPage() {
         </div>
       </div>
 
-      {/* Modal — Criar / Editar */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md shadow-xl">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-[#1f2937]">
-                {editingId ? 'Editar Departamento' : 'Novo Departamento'}
-              </h3>
-              <button onClick={() => setShowForm(false)} className="text-[#6b7280] hover:text-[#1f2937] transition-colors">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+        <Modal
+          isOpen={showForm}
+          onClose={() => setShowForm(false)}
+          title={editingId ? 'Editar Departamento' : 'Novo Departamento'}
+          size="md"
+        >
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-[#374151] mb-1.5">Nome do Departamento *</label>
+              <input
+                type="text"
+                value={form.nome}
+                onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
+                placeholder="ex: Açougue, Padaria, Hortifruti..."
+                className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#1f2937] placeholder-[#9ca3af] rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-colors"
+              />
             </div>
-            <div className="p-6 space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-[#374151] mb-1.5">Nome do Departamento *</label>
+            <div>
+              <label className="block text-sm font-medium text-[#374151] mb-1.5">Meta Diária (R$) *</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6b7280] text-sm">R$</span>
                 <input
-                  type="text"
-                  value={form.nome}
-                  onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
-                  placeholder="ex: Açougue, Padaria, Hortifruti..."
-                  className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#1f2937] placeholder-[#9ca3af] rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.meta}
+                  onChange={e => setForm(f => ({ ...f, meta: e.target.value }))}
+                  placeholder="0,00"
+                  className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#1f2937] rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-colors"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-[#374151] mb-1.5">Meta Diária (R$) *</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6b7280] text-sm">R$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.meta}
-                    onChange={e => setForm(f => ({ ...f, meta: e.target.value }))}
-                    placeholder="0,00"
-                    className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#1f2937] rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-colors"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#374151] mb-1.5">Comprador Responsável</label>
-                <select
-                  value={form.comprador}
-                  onChange={e => setForm(f => ({ ...f, comprador: e.target.value }))}
-                  className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#1f2937] rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-colors"
-                >
-                  <option value="">Selecionar comprador...</option>
-                  {MOCK_COMPRADORES.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
             </div>
-            <div className="p-6 border-t border-gray-100 flex gap-3 justify-end">
-              <button
-                onClick={() => setShowForm(false)}
-                className="px-5 py-2 text-sm font-medium border border-gray-300 text-[#6b7280] hover:bg-gray-50 rounded-lg transition-colors"
+            <div>
+              <label className="block text-sm font-medium text-[#374151] mb-1.5">Comprador Responsável</label>
+              <select
+                value={form.comprador}
+                onChange={e => setForm(f => ({ ...f, comprador: e.target.value }))}
+                className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#1f2937] rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-colors"
               >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={!form.nome.trim() || !form.meta}
-                className="px-5 py-2 text-sm font-semibold bg-[#1e40af] hover:bg-[#1e3a8a] disabled:opacity-40 text-white rounded-lg transition-colors"
-              >
-                {editingId ? 'Salvar Alterações' : 'Criar Departamento'}
-              </button>
+                <option value="">Selecionar comprador...</option>
+                {MOCK_COMPRADORES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
           </div>
-        </div>
+          <div className="flex gap-3 justify-end mt-6">
+            <Button variant="secondary" onClick={() => setShowForm(false)}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={!form.nome.trim() || !form.meta}>
+              {editingId ? 'Salvar Alterações' : 'Criar Departamento'}
+            </Button>
+          </div>
+        </Modal>
       )}
 
-      {/* Modal — Confirmar exclusão */}
       {deleteId !== null && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-sm shadow-xl p-6 text-center">
+        <Modal
+          isOpen={deleteId !== null}
+          onClose={() => setDeleteId(null)}
+          size="sm"
+        >
+          <div className="text-center">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg width="22" height="22" className="text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              <DeleteIcon className="text-red-600" />
             </div>
             <h3 className="text-lg font-bold text-[#1f2937] mb-2">Excluir Departamento?</h3>
             <p className="text-sm text-[#6b7280] mb-6">Esta ação não pode ser desfeita. O histórico de lançamentos deste setor será preservado.</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2 text-sm border border-gray-300 text-[#6b7280] hover:bg-gray-50 rounded-lg transition-colors">
-                Cancelar
-              </button>
-              <button onClick={confirmDelete} className="flex-1 py-2 text-sm font-semibold bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
-                Excluir
-              </button>
+              <Button variant="secondary" className="flex-1" onClick={() => setDeleteId(null)}>Cancelar</Button>
+              <Button variant="danger" className="flex-1" onClick={confirmDelete}>Excluir</Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

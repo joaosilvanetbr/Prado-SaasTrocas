@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { QueryProvider } from "./providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} antialiased`}>
       <body className="min-h-screen bg-white text-[#1f2937]">
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

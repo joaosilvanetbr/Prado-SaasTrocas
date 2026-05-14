@@ -11,6 +11,7 @@
     "db:migrate": "wrangler d1 migrations apply prado-trocas-db --local"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.100.10",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.10.0",
     "drizzle-orm": "^0.45.2",

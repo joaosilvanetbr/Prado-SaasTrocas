@@ -21,20 +21,18 @@ export default async function DashboardLayout({
   const token = cookieStore.get('auth_token')?.value;
 
   let roles = ['admin'];
-  let setores: number[] = [];
   if (token) {
     try {
       const verified = await jwtVerify(token, getJwtSecret());
       const payload = verified.payload as unknown as UserPayload;
       if (payload?.roles) roles = payload.roles;
-      if (payload?.setores) setores = payload.setores;
     } catch {
     }
   }
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar roles={roles} setores={setores} />
+      <Sidebar roles={roles} />
       <div className="flex-1 ml-64 min-h-screen">
         {children}
       </div>

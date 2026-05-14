@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import { SpinnerIcon, CheckIcon, WarningIcon, EditIcon, DeleteIcon, PlusIcon, SearchIcon } from '@/components/icons';
 
 interface Setor {
   id: number;
@@ -38,8 +41,8 @@ const INITIAL_USERS: User[] = [
   { id: 2, initials: 'MR', name: 'Mariana Rocha',  roles: ['gerente'],                 setores: [1, 2],   lastAccess: 'Ontem, 17:45', status: 'Ativo'   },
   { id: 3, initials: 'FP', name: 'Fernando Pinto', roles: ['comprador'],               setores: [1, 4],   lastAccess: '12/05/2024',   status: 'Inativo' },
   { id: 4, initials: 'AS', name: 'Ana Souza',      roles: ['comprador'],               setores: [1, 4],   lastAccess: 'Hoje, 07:15',  status: 'Ativo'   },
-  { id: 5, initials: 'RL', name: 'Ricardo Lima',   roles: ['comprador'],               setores: [3],      lastAccess: 'Ontem, 09:00', status: 'Ativo'   },
-  { id: 6, initials: 'PM', name: 'Patrícia Moura', roles: ['gerente', 'comprador'],    setores: [2, 5],   lastAccess: 'Ontem, 16:00', status: 'Ativo'   },
+  { id: 5, initials: 'RL', name: 'Ricardo Lima',  roles: ['comprador'],               setores: [3],      lastAccess: 'Ontem, 09:00', status: 'Ativo'   },
+  { id: 6, initials: 'PM', name: 'Patrícia Moura', roles: ['gerente', 'comprador'],   setores: [2, 5],   lastAccess: 'Ontem, 16:00', status: 'Ativo'   },
 ];
 
 interface UserForm {
@@ -57,21 +60,14 @@ interface Toast {
 }
 
 function ToastNotification({ toast, onClose }: { toast: Toast; onClose: () => void }) {
-  useEffect(() => {
+  React.useEffect(() => {
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const borderColor = toast.type === 'success' ? 'border-green-400' : 'border-red-400';
-  const iconColor = toast.type === 'success' ? 'text-green-600' : 'text-red-600';
-
   return (
-    <div className={`fixed bottom-4 right-4 bg-white rounded-lg px-4 py-3 flex items-center gap-3 animate-scale-in z-50 border-2 shadow-lg ${borderColor}`}>
-      {toast.type === 'success' ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconColor}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={iconColor}><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>
-      )}
+    <div className={`fixed bottom-4 right-4 bg-white rounded-lg px-4 py-3 flex items-center gap-3 animate-scale-in z-50 border-2 shadow-lg ${toast.type === 'success' ? 'border-green-400' : 'border-red-400'}`}>
+      {toast.type === 'success' ? <CheckIcon className="text-green-600" /> : <WarningIcon className="text-red-600" />}
       <span className="text-[#1f2937] text-sm font-medium">{toast.message}</span>
     </div>
   );
@@ -88,10 +84,10 @@ export default function UsuariosPage() {
   const [form, setForm] = useState<UserForm>({ name: '', password: '', roles: [], setores: [], status: true });
   const [errors, setErrors] = useState<Partial<Record<keyof UserForm, string>>>({});
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
-  };
+  }, []);
 
   const removeToast = (id: number) => {
     setToasts(prev => prev.filter(t => t.id !== id));
@@ -225,13 +221,12 @@ export default function UsuariosPage() {
         <ToastNotification key={t.id} toast={t} onClose={() => removeToast(t.id)} />
       ))}
 
-      {/* Delete Confirm */}
       {deleteModal.show && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-backdrop-in">
           <div className="bg-white border border-gray-200 rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl animate-scale-in">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-600"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                <DeleteIcon className="text-red-600" />
               </div>
               <div>
                 <h3 className="text-[#1f2937] font-semibold">Confirmar exclusão</h3>
@@ -240,14 +235,13 @@ export default function UsuariosPage() {
             </div>
             <p className="text-[#374151] mb-6">Excluir <span className="font-semibold">{deleteModal.name}</span>?</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteModal({ show: false, index: null, name: '' })} className="flex-1 px-4 py-2.5 border border-gray-300 text-[#374151] hover:bg-gray-50 rounded-lg font-medium transition-colors">Cancelar</button>
-              <button onClick={executeDelete} className="flex-1 px-4 py-2.5 bg-[#dc2626] hover:bg-red-500 text-white rounded-lg font-medium transition-colors">Excluir</button>
+              <Button variant="secondary" className="flex-1" onClick={() => setDeleteModal({ show: false, index: null, name: '' })}>Cancelar</Button>
+              <Button variant="danger" className="flex-1" onClick={executeDelete}>Excluir</Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Create / Edit Modal */}
       {formModal.show && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-backdrop-in p-4" onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
           <div className="bg-white border border-gray-200 rounded-xl w-full max-w-lg shadow-xl animate-scale-in">
@@ -262,7 +256,6 @@ export default function UsuariosPage() {
             </div>
 
             <div className="p-6 space-y-5">
-              {/* Nome */}
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-1">Nome <span className="text-red-500">*</span></label>
                 <input
@@ -275,7 +268,6 @@ export default function UsuariosPage() {
                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
 
-              {/* Senha (só criar) */}
               {formModal.mode === 'create' && (
                 <div>
                   <label className="block text-sm font-medium text-[#374151] mb-1">Senha <span className="text-red-500">*</span></label>
@@ -290,7 +282,6 @@ export default function UsuariosPage() {
                 </div>
               )}
 
-              {/* Cargos */}
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Cargos <span className="text-red-500">*</span></label>
                 <div className="flex gap-2">
@@ -311,7 +302,6 @@ export default function UsuariosPage() {
                 {errors.roles && <p className="text-red-500 text-xs mt-1">{errors.roles}</p>}
               </div>
 
-              {/* Setores */}
               <div>
                 <label className="block text-sm font-medium text-[#374151] mb-2">Setores</label>
                 <div className="flex flex-wrap gap-2">
@@ -332,7 +322,6 @@ export default function UsuariosPage() {
                 {form.setores.length === 0 && <p className="text-xs text-[#9ca3af] mt-1">Nenhum setor selecionado = acesso a todos os setores</p>}
               </div>
 
-              {/* Status */}
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
                   <p className="font-medium text-[#1f2937] text-sm">Status</p>
@@ -348,31 +337,15 @@ export default function UsuariosPage() {
             </div>
 
             <div className="p-6 border-t border-gray-100 flex gap-3">
-              <button
-                onClick={closeModal}
-                disabled={saving}
-                className="flex-1 px-4 py-2.5 border border-gray-300 text-[#374151] hover:bg-gray-50 rounded-lg font-medium transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 px-4 py-2.5 bg-[#1e40af] hover:bg-[#1e3a8a] text-white rounded-lg font-medium transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
-              >
-                {saving ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                    Salvando...
-                  </>
-                ) : formModal.mode === 'edit' ? 'Salvar' : 'Criar Usuário'}
-              </button>
+              <Button variant="secondary" className="flex-1" onClick={closeModal} disabled={saving}>Cancelar</Button>
+              <Button variant="primary" className="flex-1" onClick={handleSave} disabled={saving} loading={saving}>
+                {saving ? 'Salvando...' : formModal.mode === 'edit' ? 'Salvar' : 'Criar Usuário'}
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Topbar */}
       <div className="h-24 border-b border-gray-200 flex items-center px-8 bg-white">
         <div>
           <h1 className="text-2xl font-bold text-[#1f2937] tracking-tight uppercase">Gestão de Usuários</h1>
@@ -384,7 +357,7 @@ export default function UsuariosPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#9ca3af]">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <SearchIcon />
             </div>
             <input
               type="text"
@@ -394,13 +367,9 @@ export default function UsuariosPage() {
               className="w-64 bg-white border border-gray-200 text-[#1f2937] placeholder-[#9ca3af] rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-[#1e40af]"
             />
           </div>
-          <button onClick={openCreate} className="bg-[#1e40af] hover:bg-[#1e3a8a] hover:scale-105 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all active:scale-95">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-            Adicionar Usuário
-          </button>
+          <Button onClick={openCreate} leftIcon={<PlusIcon />}>Adicionar Usuário</Button>
         </div>
 
-        {/* Table */}
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
           <table className="w-full text-sm text-left">
             <thead className="text-[#6b7280] text-xs uppercase font-semibold border-b border-gray-100">
@@ -433,19 +402,15 @@ export default function UsuariosPage() {
                         {getRolesLabel(user.roles)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-[#6b7280] text-xs max-w-[140px]">
-                      {setorNames}
-                    </td>
+                    <td className="px-6 py-4 text-[#6b7280] text-xs max-w-[140px]">{setorNames}</td>
                     <td className="px-6 py-4 text-[#6b7280] text-xs">{user.lastAccess}</td>
                     <td className="px-6 py-4 text-center">
                       {loadingIndex === idx ? (
-                        <div className="flex items-center justify-center">
-                          <svg className="animate-spin w-4 h-4 text-[#6b7280]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                        </div>
+                        <div className="flex items-center justify-center"><SpinnerIcon /></div>
                       ) : user.status === 'Ativo' ? (
-                        <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200">Ativo</span>
+                        <Badge variant="success" size="sm">Ativo</Badge>
                       ) : (
-                        <span className="px-3 py-1 bg-gray-100 text-[#6b7280] text-xs font-bold rounded-full border border-gray-200">Inativo</span>
+                        <Badge variant="info" size="sm">Inativo</Badge>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -463,18 +428,18 @@ export default function UsuariosPage() {
                           }`}
                         >
                           {loadingIndex === idx ? (
-                            <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            <SpinnerIcon />
                           ) : user.status === 'Ativo' ? (
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" x2="19.07" y1="4.93" y2="19.07"/></svg>
                           ) : (
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <CheckIcon className="text-green-600" />
                           )}
                         </button>
                         <button onClick={() => openEdit(idx)} title="Editar" className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-[#1f2937] hover:border-[#1e40af] transition-colors">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          <EditIcon />
                         </button>
                         <button onClick={() => confirmDelete(idx)} title="Excluir" className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-red-600 hover:border-red-400 transition-colors">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                          <DeleteIcon />
                         </button>
                       </div>
                     </td>

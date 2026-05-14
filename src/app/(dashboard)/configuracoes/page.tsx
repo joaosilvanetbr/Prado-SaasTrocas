@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
+import React, { useState } from 'react';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import { CheckIcon, WarningIcon } from '@/components/icons';
 type Section = 'perfil' | 'seguranca' | 'notificacoes' | 'preferencias';
 
 interface Toast {
@@ -18,7 +20,7 @@ const menuItems = [
 ];
 
 function ToastNotification({ toast, onClose }: { toast: Toast; onClose: () => void }) {
-  useEffect(() => {
+  React.useEffect(() => {
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [onClose]);
@@ -27,11 +29,7 @@ function ToastNotification({ toast, onClose }: { toast: Toast; onClose: () => vo
     <div className={`fixed bottom-4 right-4 bg-white rounded-lg px-4 py-3 flex items-center gap-3 animate-scale-in z-50 border shadow-lg ${
       toast.type === 'success' ? 'border-green-400' : 'border-red-400'
     }`}>
-      {toast.type === 'success' ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-600"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>
-      )}
+      {toast.type === 'success' ? <CheckIcon className="text-green-600" /> : <WarningIcon className="text-red-600" />}
       <span className="text-[#1f2937] text-sm font-medium">{toast.message}</span>
     </div>
   );
@@ -49,7 +47,7 @@ function PerfilContent({ showToast }: { showToast: (msg: string) => void }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm animate-fade-in">
+    <Card variant="default" className="overflow-hidden animate-fade-in">
       <div className="p-5 border-b border-gray-100">
         <h2 className="text-lg font-semibold text-[#1f2937]">Detalhes do Perfil</h2>
         <p className="text-sm text-[#6b7280] mt-1">Atualize as informações do seu perfil público.</p>
@@ -60,7 +58,7 @@ function PerfilContent({ showToast }: { showToast: (msg: string) => void }) {
             <span className="text-white text-2xl font-bold">A</span>
           </div>
           <div>
-            <button className="px-4 py-2 text-sm font-medium bg-[#1e40af] hover:bg-[#1e3a8a] text-white rounded-lg transition-all active:scale-95">Mudar Foto</button>
+            <Button size="sm">Mudar Foto</Button>
             <p className="text-xs text-[#9ca3af] mt-2">JPG, GIF ou PNG. Máximo de 2MB.</p>
           </div>
         </div>
@@ -90,20 +88,11 @@ function PerfilContent({ showToast }: { showToast: (msg: string) => void }) {
         </div>
       </div>
       <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-5 py-2 text-sm font-medium bg-[#1e40af] hover:bg-[#1e3a8a] text-white rounded-lg transition-all active:scale-95 disabled:opacity-70 flex items-center gap-2"
-        >
-          {saving ? (
-            <>
-              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              Salvando...
-            </>
-          ) : 'Salvar Alterações'}
-        </button>
+        <Button onClick={handleSave} disabled={saving} loading={saving}>
+          {saving ? 'Salvando...' : 'Salvar Alterações'}
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -129,7 +118,7 @@ function SegurancaContent({ showToast }: { showToast: (msg: string) => void }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm animate-fade-in">
+    <Card variant="default" className="overflow-hidden animate-fade-in">
       <div className="p-5 border-b border-gray-100">
         <h2 className="text-lg font-semibold text-[#1f2937]">Segurança e Acesso</h2>
         <p className="text-sm text-[#6b7280] mt-1">Gerencie sua senha e configurações de segurança.</p>
@@ -185,20 +174,11 @@ function SegurancaContent({ showToast }: { showToast: (msg: string) => void }) {
         </div>
       </div>
       <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-5 py-2 text-sm font-medium bg-[#1e40af] hover:bg-[#1e3a8a] text-white rounded-lg transition-all active:scale-95 disabled:opacity-70 flex items-center gap-2"
-        >
-          {saving ? (
-            <>
-              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              Salvando...
-            </>
-          ) : 'Atualizar Senha'}
-        </button>
+        <Button onClick={handleSave} disabled={saving} loading={saving}>
+          {saving ? 'Salvando...' : 'Atualizar Senha'}
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -224,7 +204,7 @@ function NotificacoesContent({ showToast }: { showToast: (msg: string) => void }
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm animate-fade-in">
+    <Card variant="default" className="overflow-hidden animate-fade-in">
       <div className="p-5 border-b border-gray-100">
         <h2 className="text-lg font-semibold text-[#1f2937]">Notificações</h2>
         <p className="text-sm text-[#6b7280] mt-1">Escolha como deseja receber alertas e atualizações.</p>
@@ -252,20 +232,11 @@ function NotificacoesContent({ showToast }: { showToast: (msg: string) => void }
         ))}
       </div>
       <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-5 py-2 text-sm font-medium bg-[#1e40af] hover:bg-[#1e3a8a] text-white rounded-lg transition-all active:scale-95 disabled:opacity-70 flex items-center gap-2"
-        >
-          {saving ? (
-            <>
-              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              Salvando...
-            </>
-          ) : 'Salvar Preferências'}
-        </button>
+        <Button onClick={handleSave} disabled={saving} loading={saving}>
+          {saving ? 'Salvando...' : 'Salvar Preferências'}
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -286,7 +257,7 @@ function PreferenciasContent({ showToast }: { showToast: (msg: string) => void }
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm animate-fade-in">
+    <Card variant="default" className="overflow-hidden animate-fade-in">
       <div className="p-5 border-b border-gray-100">
         <h2 className="text-lg font-semibold text-[#1f2937]">Preferências do Sistema</h2>
         <p className="text-sm text-[#6b7280] mt-1">Personalize a aparência e o comportamento do sistema.</p>
@@ -355,20 +326,11 @@ function PreferenciasContent({ showToast }: { showToast: (msg: string) => void }
         </div>
       </div>
       <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-5 py-2 text-sm font-medium bg-[#1e40af] hover:bg-[#1e3a8a] text-white rounded-lg transition-all active:scale-95 disabled:opacity-70 flex items-center gap-2"
-        >
-          {saving ? (
-            <>
-              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              Salvando...
-            </>
-          ) : 'Salvar Preferências'}
-        </button>
+        <Button onClick={handleSave} disabled={saving} loading={saving}>
+          {saving ? 'Salvando...' : 'Salvar Preferências'}
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 

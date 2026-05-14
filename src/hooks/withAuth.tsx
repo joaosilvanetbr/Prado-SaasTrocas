@@ -10,6 +10,7 @@ interface WithAuthOptions {
 
 export function withAuth<P extends object>(
   Component: React.ComponentType<P>,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   options: WithAuthOptions = {}
 ) {
   return function AuthenticatedComponent(props: P) {

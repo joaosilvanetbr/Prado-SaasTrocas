@@ -1,4 +1,6 @@
 import React from 'react';
+import { formatCurrency } from '@/lib/format';
+import Badge from './ui/Badge';
 
 export interface SectorData {
   id: number;
@@ -11,18 +13,7 @@ interface SectorsTableProps {
   sectors: SectorData[];
 }
 
-function StatusBadge({ pct, isBest, isWorst }: { pct: number; isBest: boolean; isWorst: boolean }) {
-  if (isWorst)  return <span className="px-3 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-full border border-red-200 uppercase tracking-wide">Crítico</span>;
-  if (isBest)   return <span className="px-3 py-1 bg-[#ffff00] text-[#999900] text-xs font-bold rounded-full border border-[#ffcc00]/30 uppercase tracking-wide">Melhor</span>;
-  if (pct < 85) return <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full border border-green-200">Ótimo</span>;
-  if (pct < 100)return <span className="px-3 py-1 bg-blue-100 text-blue-600 text-xs font-medium rounded-full border border-blue-200">Estável</span>;
-  return          <span className="px-3 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full border border-red-200">Acima</span>;
-}
-
 export default function SectorsTable({ sectors }: SectorsTableProps) {
-  const fmt = (v: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-
   let bestId = -1;
   let minPct = Infinity;
   let worstId = -1;
@@ -59,7 +50,7 @@ export default function SectorsTable({ sectors }: SectorsTableProps) {
 
                 <td className="px-5 py-4 min-w-[220px]">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[#1f2937] font-medium">{fmt(s.realizado)}</span>
+                    <span className="text-[#1f2937] font-medium">{formatCurrency(s.realizado)}</span>
                     <span className={`text-xs font-bold ml-4 ${bom ? 'text-[#16a34a]' : 'text-red-600'}`}>
                       {pct.toFixed(0)}%
                     </span>
@@ -72,18 +63,24 @@ export default function SectorsTable({ sectors }: SectorsTableProps) {
                   </div>
                 </td>
 
-                <td className="px-5 py-5 text-[#6b7280]">{fmt(s.meta)}</td>
+                <td className="px-5 py-5 text-[#6b7280]">{formatCurrency(s.meta)}</td>
 
                 <td className={`px-5 py-5 font-bold ${bom ? 'text-[#16a34a]' : 'text-red-600'}`}>
-                  {diferenca > 0 ? '+' : ''}{fmt(diferenca)}
+                  {diferenca > 0 ? '+' : ''}{formatCurrency(diferenca)}
                 </td>
 
                 <td className="px-5 py-5 text-center">
-                  <StatusBadge
-                    pct={pct}
-                    isBest={s.id === bestId && sectors.length > 1}
-                    isWorst={s.id === worstId && sectors.length > 1 && maxPct > 100}
-                  />
+                  {s.id === worstId && sectors.length > 1 && maxPct > 100 ? (
+                    <Badge variant="error" size="sm">Crítico</Badge>
+                  ) : s.id === bestId && sectors.length > 1 ? (
+                    <Badge variant="warning" size="sm">Melhor</Badge>
+                  ) : pct < 85 ? (
+                    <Badge variant="success" size="sm">Ótimo</Badge>
+                  ) : pct < 100 ? (
+                    <Badge variant="info" size="sm">Estável</Badge>
+                  ) : (
+                    <Badge variant="error" size="sm">Acima</Badge>
+                  )}
                 </td>
               </tr>
             );
