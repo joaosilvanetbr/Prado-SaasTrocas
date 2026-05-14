@@ -2,6 +2,8 @@ import Sidebar from "@/components/Sidebar";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
+export const runtime = 'edge';
+
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super-secret-default-key');
 
 interface UserPayload {
