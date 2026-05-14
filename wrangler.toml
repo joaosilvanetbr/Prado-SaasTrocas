@@ -5,6 +5,6 @@ pages_build_output_dir = ".vercel/output/static"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "prado-trocas-db"
-database_id = "ae26e687276cddf49fae4e330b4c482d"
+database_name = "prado-saastrocas"
+database_id = "f273fb11-196d-4805-bfc3-5b16df6fcffc"
 migrations_dir = "drizzle"
