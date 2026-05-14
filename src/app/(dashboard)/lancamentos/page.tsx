@@ -1,9 +1,7 @@
 import LancamentosClient from './LancamentosClient';
-import { getRequestContext } from '@cloudflare/next-on-pages';
-import { getDb } from '@/db';
+import { db } from '@/db';
 import { sectors, daily_reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import type { D1Database } from '@cloudflare/workers-types';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -24,22 +22,18 @@ export default async function LancamentosPage() {
   let sectorsWithData = FALLBACK_SECTORS;
 
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    if (env?.DB) {
-      const db = getDb(env.DB);
-      const allSectors = await db.select().from(sectors);
-      const todayReports = await db.select().from(daily_reports).where(eq(daily_reports.date, today));
+    const allSectors = await db.select().from(sectors);
+    const todayReports = await db.select().from(daily_reports).where(eq(daily_reports.date, today));
 
-      sectorsWithData = allSectors.map(sector => {
-        const report = todayReports.find(r => r.sector_id === sector.id);
-        return {
-          id: sector.id,
-          nome: sector.nome,
-          meta: report?.valor_meta ?? 0,
-          realizado: report?.valor_realizado ?? 0,
-        };
-      });
-    }
+    sectorsWithData = allSectors.map(sector => {
+      const report = todayReports.find(r => r.sector_id === sector.id);
+      return {
+        id: sector.id,
+        nome: sector.nome,
+        meta: report?.valor_meta ?? 0,
+        realizado: report?.valor_realizado ?? 0,
+      };
+    });
   } catch {
     sectorsWithData = FALLBACK_SECTORS;
   }
