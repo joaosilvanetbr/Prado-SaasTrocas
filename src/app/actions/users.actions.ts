@@ -8,7 +8,6 @@ import { z } from 'zod';
 
 const createUserSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(100),
-  email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').max(100),
   role: z.string().min(1, 'Cargo é obrigatório'),
   setores: z.string().default(''),
@@ -16,7 +15,6 @@ const createUserSchema = z.object({
 
 const updateUserSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(100).optional(),
-  email: z.string().email('Email inválido').optional(),
   role: z.string().min(1, 'Cargo é obrigatório').optional(),
   setores: z.string().optional(),
   ativo: z.boolean().optional(),
@@ -30,7 +28,6 @@ const updatePasswordSchema = z.object({
 export async function createUserAction(formData: FormData) {
   const rawData = {
     nome: formData.get('nome') as string,
-    email: formData.get('email') as string,
     password: formData.get('password') as string,
     role: formData.get('role') as string,
     setores: formData.get('setores') as string || '',
@@ -41,16 +38,16 @@ export async function createUserAction(formData: FormData) {
     return { error: parseResult.error.issues.map(e => e.message).join(', ') };
   }
 
-  const { nome, email, password, role, setores } = parseResult.data;
+  const { nome, password, role, setores } = parseResult.data;
 
   try {
-    const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const existing = await db.select().from(users).where(eq(users.nome, nome)).limit(1);
     if (existing.length > 0) {
-      return { error: 'Email já cadastrado' };
+      return { error: 'Usuário já cadastrado' };
     }
 
     const password_hash = await bcrypt.hash(password, 10);
-    const result = await db.insert(users).values({ nome, email, password_hash, role, setores }).returning();
+    const result = await db.insert(users).values({ nome, password_hash, role, setores }).returning();
     return { success: true, user: result[0] };
   } catch (error) {
     console.error('Error creating user:', error);
@@ -77,7 +74,6 @@ export async function updateUserAction(id: number, data: Record<string, unknown>
   try {
     const updateData: Record<string, unknown> = {};
     if (parseResult.data.nome !== undefined) updateData.nome = parseResult.data.nome;
-    if (parseResult.data.email !== undefined) updateData.email = parseResult.data.email;
     if (parseResult.data.role !== undefined) updateData.role = parseResult.data.role;
     if (parseResult.data.setores !== undefined) updateData.setores = parseResult.data.setores;
 
