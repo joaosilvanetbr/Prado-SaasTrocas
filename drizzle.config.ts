@@ -5,4 +5,5 @@ export default {
   out: './drizzle',
   dialect: 'sqlite',
   driver: 'd1-http',
+  dbId: 'ae26e687276cddf49fae4e330b4c482d',
 } satisfies Config;
