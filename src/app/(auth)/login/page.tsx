@@ -24,27 +24,17 @@ export default function LoginPage() {
         setError(res.error);
         setLoading(false);
       } else if (res.success) {
-        const roles = (res as any).roles as string[] || [];
+        const roles = (res as { success: boolean; roles?: string[] }).roles || [];
         if (roles.includes('admin')) {
           router.push('/');
         } else {
           router.push('/meus-setores');
         }
       }
-    } catch (err) {
+    } catch {
       setError('Ocorreu um erro inesperado.');
       setLoading(false);
     }
-  };
-
-  const quickLogin = (role: string) => {
-    const map: Record<string, string> = {
-      admin:     'Carlos Silva',
-      gerente:   'Mariana Rocha',
-      comprador: 'Ana Souza',
-    };
-    setUsername(map[role]);
-    setPassword('demo123');
   };
 
   return (
@@ -101,26 +91,6 @@ export default function LoginPage() {
               ) : 'Entrar'}
             </button>
           </form>
-
-          <div className="mt-6 pt-5 border-t border-[#e5e7eb]">
-            <p className="text-xs text-[#9ca3af] mb-3 text-center uppercase tracking-wide font-medium">Acesso rápido (demo)</p>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: 'Admin', role: 'admin', bg: 'bg-blue-600 hover:bg-blue-700 text-white border-blue-700' },
-                { label: 'Gerente', role: 'gerente', bg: 'bg-sky-600 hover:bg-sky-700 text-white border-sky-700' },
-                { label: 'Comprador', role: 'comprador', bg: 'bg-amber-500 hover:bg-amber-600 text-amber-900 border-amber-600' },
-              ].map(({ label, role, bg }) => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => quickLogin(role)}
-                  className={`text-xs font-semibold py-2.5 rounded-lg border transition-colors ${bg}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

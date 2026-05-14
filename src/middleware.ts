@@ -1,27 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-import { rolePermissions, type Role } from '@/lib/permissions';
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super-secret-default-key');
+import { getJwtSecret } from '@/lib/env';
+import { rolePermissions, getPrimaryRole, hasAnyRole, type Role } from '@/lib/permissions';
 
 interface UserPayload {
   sub: string;
   nome: string;
   roles?: string[];
   setores?: number[];
-}
-
-function getPrimaryRole(payload: UserPayload): Role {
-  if (!payload.roles || payload.roles.length === 0) return 'comprador';
-  if (payload.roles.includes('admin')) return 'admin';
-  if (payload.roles.includes('gerente')) return 'gerente';
-  return 'comprador';
-}
-
-function hasAnyRole(payload: UserPayload, allowedRoles: string[]): boolean {
-  if (!payload.roles || payload.roles.length === 0) return false;
-  return payload.roles.some(r => allowedRoles.includes(r));
 }
 
 export async function middleware(request: NextRequest) {
@@ -33,7 +20,7 @@ export async function middleware(request: NextRequest) {
 
   if (token) {
     try {
-      const verified = await jwtVerify(token, JWT_SECRET);
+      const verified = await jwtVerify(token, getJwtSecret());
       payload = verified.payload as unknown as UserPayload;
     } catch {
       payload = null;
@@ -50,12 +37,12 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isLoginPage) {
-    const primaryRole = getPrimaryRole(payload);
+    const primaryRole = getPrimaryRole(payload.roles || []);
     const home = primaryRole === 'admin' ? '/' : '/meus-setores';
     return NextResponse.redirect(new URL(home, request.url));
   }
 
-  const primaryRole = getPrimaryRole(payload);
+  const primaryRole = getPrimaryRole(payload.roles || []);
   const allowedRoles = Object.entries(rolePermissions)
     .filter(([role]) => {
       const perms = rolePermissions[role as Role];
@@ -63,7 +50,7 @@ export async function middleware(request: NextRequest) {
     })
     .map(([role]) => role);
 
-  if (!hasAnyRole(payload, allowedRoles)) {
+  if (!hasAnyRole(payload.roles || [], allowedRoles as Role[])) {
     const home = primaryRole === 'admin' ? '/' : '/meus-setores';
     return NextResponse.redirect(new URL(home, request.url));
   }

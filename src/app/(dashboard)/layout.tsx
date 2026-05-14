@@ -1,10 +1,9 @@
 import Sidebar from "@/components/Sidebar";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import { getJwtSecret } from "@/lib/env";
 
 export const runtime = 'edge';
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super-secret-default-key');
 
 interface UserPayload {
   sub: string;
@@ -25,7 +24,7 @@ export default async function DashboardLayout({
   let setores: number[] = [];
   if (token) {
     try {
-      const verified = await jwtVerify(token, JWT_SECRET);
+      const verified = await jwtVerify(token, getJwtSecret());
       const payload = verified.payload as unknown as UserPayload;
       if (payload?.roles) roles = payload.roles;
       if (payload?.setores) setores = payload.setores;

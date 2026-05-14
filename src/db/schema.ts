@@ -3,9 +3,10 @@ import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   nome: text('nome').notNull().unique(),
+  email: text('email').notNull().unique(),
   password_hash: text('password_hash').notNull(),
   role: text('role').notNull(),
-  setores: text('setores'),
+  setores: text('setores').notNull().default(''),
 });
 
 export const sectors = sqliteTable('sectors', {
