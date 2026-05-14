@@ -1,12 +1,10 @@
 'use server';
 
-import { getRequestContext } from '@cloudflare/next-on-pages';
-import { getDb } from '@/db';
+import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import type { D1Database } from '@cloudflare/workers-types';
 
 const createUserSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(100),
@@ -46,10 +44,6 @@ export async function createUserAction(formData: FormData) {
   const { nome, email, password, role, setores } = parseResult.data;
 
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    if (!env.DB) return { error: 'Database not configured' };
-
-    const db = getDb(env.DB);
     const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (existing.length > 0) {
       return { error: 'Email já cadastrado' };
@@ -58,20 +52,18 @@ export async function createUserAction(formData: FormData) {
     const password_hash = await bcrypt.hash(password, 10);
     const result = await db.insert(users).values({ nome, email, password_hash, role, setores }).returning();
     return { success: true, user: result[0] };
-  } catch {
+  } catch (error) {
+    console.error('Error creating user:', error);
     return { error: 'Erro ao criar usuário' };
   }
 }
 
 export async function listUsersAction() {
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    if (!env.DB) return { error: 'Database not configured' };
-
-    const db = getDb(env.DB);
     const result = await db.select().from(users);
     return { success: true, users: result };
-  } catch {
+  } catch (error) {
+    console.error('Error listing users:', error);
     return { error: 'Database unavailable' };
   }
 }
@@ -83,10 +75,6 @@ export async function updateUserAction(id: number, data: Record<string, unknown>
   }
 
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    if (!env.DB) return { error: 'Database not configured' };
-
-    const db = getDb(env.DB);
     const updateData: Record<string, unknown> = {};
     if (parseResult.data.nome !== undefined) updateData.nome = parseResult.data.nome;
     if (parseResult.data.email !== undefined) updateData.email = parseResult.data.email;
@@ -95,20 +83,18 @@ export async function updateUserAction(id: number, data: Record<string, unknown>
 
     await db.update(users).set(updateData).where(eq(users.id, id));
     return { success: true };
-  } catch {
+  } catch (error) {
+    console.error('Error updating user:', error);
     return { error: 'Erro ao atualizar usuário' };
   }
 }
 
 export async function deleteUserAction(id: number) {
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    if (!env.DB) return { error: 'Database not configured' };
-
-    const db = getDb(env.DB);
     await db.delete(users).where(eq(users.id, id));
     return { success: true };
-  } catch {
+  } catch (error) {
+    console.error('Error deleting user:', error);
     return { error: 'Erro ao deletar usuário' };
   }
 }
@@ -120,10 +106,6 @@ export async function updatePasswordAction(id: number, oldPassword: string, newP
   }
 
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    if (!env.DB) return { error: 'Database not configured' };
-
-    const db = getDb(env.DB);
     const userList = await db.select().from(users).where(eq(users.id, id)).limit(1);
     if (userList.length === 0) return { error: 'Usuário não encontrado' };
 
@@ -134,7 +116,8 @@ export async function updatePasswordAction(id: number, oldPassword: string, newP
     const newHash = await bcrypt.hash(newPassword, 10);
     await db.update(users).set({ password_hash: newHash }).where(eq(users.id, id));
     return { success: true };
-  } catch {
+  } catch (error) {
+    console.error('Error updating password:', error);
     return { error: 'Erro ao atualizar senha' };
   }
 }

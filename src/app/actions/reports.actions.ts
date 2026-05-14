@@ -1,11 +1,9 @@
 'use server';
 
-import { getRequestContext } from '@cloudflare/next-on-pages';
-import { getDb } from '@/db';
+import { db } from '@/db';
 import { daily_reports, sectors } from '@/db/schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
-import type { D1Database } from '@cloudflare/workers-types';
 
 const sectorReportSchema = z.object({
   sector_id: z.number().int().positive(),
@@ -29,11 +27,6 @@ export async function saveDailyReportAction(date: string, sectorsData: { sector_
   }
 
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    if (!env.DB) return { error: 'Database not configured' };
-
-    const db = getDb(env.DB);
-
     for (const s of parseResult.data.sectors) {
       await db.delete(daily_reports).where(
         and(eq(daily_reports.date, date), eq(daily_reports.sector_id, s.sector_id))
@@ -46,34 +39,28 @@ export async function saveDailyReportAction(date: string, sectorsData: { sector_
       });
     }
     return { success: true };
-  } catch {
+  } catch (error) {
+    console.error('Error saving report:', error);
     return { error: 'Erro ao salvar relatório' };
   }
 }
 
 export async function getReportsByDateAction(date: string) {
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    if (!env.DB) return { error: 'Database not configured' };
-
-    const db = getDb(env.DB);
     const result = await db.select({
       report: daily_reports,
       sector: sectors,
     }).from(daily_reports).leftJoin(sectors, eq(daily_reports.sector_id, sectors.id))
       .where(eq(daily_reports.date, date));
     return { success: true, reports: result };
-  } catch {
+  } catch (error) {
+    console.error('Error getting reports by date:', error);
     return { error: 'Database unavailable' };
   }
 }
 
 export async function getReportsHistoryAction(startDate?: string, endDate?: string) {
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    if (!env.DB) return { error: 'Database not configured' };
-
-    const db = getDb(env.DB);
     let result;
 
     if (startDate && endDate) {
@@ -105,7 +92,8 @@ export async function getReportsHistoryAction(startDate?: string, endDate?: stri
         .orderBy(daily_reports.date);
     }
     return { success: true, reports: result };
-  } catch {
+  } catch (error) {
+    console.error('Error getting reports history:', error);
     return { error: 'Database unavailable' };
   }
 }

@@ -2,9 +2,3 @@ name = "prado-trocas"
 compatibility_date = "2024-03-20"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "prado-saastrocas"
-database_id = "f273fb11-196d-4805-bfc3-5b16df6fcffc"
-migrations_dir = "drizzle"

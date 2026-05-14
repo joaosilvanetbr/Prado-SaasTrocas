@@ -2,14 +2,14 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
-  DATABASE_ID: z.string().optional(),
+  DATABASE_URL: z.string().url('DATABASE_URL must be a valid connection string'),
   NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('development'),
 });
 
 function parseEnv(): z.infer<typeof envSchema> {
   const envVars: Record<string, string | undefined> = {
     JWT_SECRET: process.env.JWT_SECRET,
-    DATABASE_ID: process.env.DATABASE_ID,
+    DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
   };
 

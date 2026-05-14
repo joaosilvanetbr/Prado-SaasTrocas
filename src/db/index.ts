@@ -1,13 +1,19 @@
-import { drizzle } from 'drizzle-orm/d1';
-import type { D1Database } from '@cloudflare/workers-types';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from './schema';
 
 export type Database = ReturnType<typeof drizzle>;
 
-export function getDb(envDB: D1Database) {
-  return drizzle(envDB, { schema });
-}
+const connectionString = process.env.DATABASE_URL!;
 
-export function getLocalDb(sqlite: unknown) {
-  return drizzle(sqlite as D1Database, { schema });
+export const postgresClient = postgres(connectionString, { 
+  max: 1,
+  idle_timeout: 20,
+  connect_timeout: 10,
+});
+
+export const db = drizzle(postgresClient, { schema });
+
+export function getDb() {
+  return db;
 }

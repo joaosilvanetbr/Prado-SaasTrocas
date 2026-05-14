@@ -1,7 +1,6 @@
 'use server';
 
-import { getRequestContext } from '@cloudflare/next-on-pages';
-import { getDb } from '@/db';
+import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { SignJWT } from 'jose';
@@ -9,9 +8,6 @@ import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { getJwtSecret } from '@/lib/env';
-import Database from 'better-sqlite3';
-import path from 'path';
-import fs from 'fs';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Usuário é obrigatório').max(100),
@@ -40,30 +36,6 @@ function checkRateLimit(ip: string): boolean {
 
   entry.count++;
   return true;
-}
-
-function queryLocalDb(sql: string, params: string[]) {
-  try {
-    const stateDir = path.join(process.cwd(), '.wrangler', 'state', 'v3', 'd1', 'miniflare-D1DatabaseObject');
-    if (!fs.existsSync(stateDir)) return [];
-    const files = fs.readdirSync(stateDir);
-    const dbFile = files.find((f) => f.endsWith('.sqlite') && !f.includes('-shm') && !f.includes('-wal'));
-    if (!dbFile) return [];
-    const dbPath = path.join(stateDir, dbFile);
-    const sqlite = new Database(dbPath);
-    const stmt = sqlite.prepare(sql);
-    return stmt.all(...params);
-  } catch {
-    return [];
-  }
-}
-
-interface DbUser {
-  id: number;
-  nome: string;
-  password_hash: string;
-  role: string;
-  setores: string;
 }
 
 interface User {
@@ -96,12 +68,10 @@ export async function loginAction(formData: FormData) {
   let user: User | null = null;
 
   try {
-    const env = getRequestContext().env as { DB?: D1Database };
-    const db = getDb(env.DB!);
     const userList = await db.select().from(users).where(eq(users.nome, username)).limit(1);
 
     if (userList.length > 0) {
-      const userFromDb = userList[0] as DbUser;
+      const userFromDb = userList[0];
       user = {
         id: userFromDb.id,
         nome: userFromDb.nome,
@@ -110,18 +80,9 @@ export async function loginAction(formData: FormData) {
         setores: (userFromDb.setores || '').split(',').filter(Boolean).map(Number),
       };
     }
-  } catch {
-    const results = queryLocalDb('SELECT * FROM users WHERE nome = ? LIMIT 1', [username]) as DbUser[];
-    if (results.length > 0) {
-      const resultFromDb = results[0];
-      user = {
-        id: resultFromDb.id,
-        nome: resultFromDb.nome,
-        password_hash: resultFromDb.password_hash,
-        roles: (resultFromDb.role || '').split(',').map((r: string) => r.trim()).filter(Boolean),
-        setores: (resultFromDb.setores || '').split(',').filter(Boolean).map(Number),
-      };
-    }
+  } catch (error) {
+    console.error('Database error:', error);
+    return { error: 'Erro ao conectar ao banco de dados.' };
   }
 
   if (!user) {
