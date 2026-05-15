@@ -38,7 +38,7 @@ export async function proxy(request: NextRequest) {
 
   if (isLoginPage) {
     const primaryRole = getPrimaryRole(payload.roles || []);
-    const home = primaryRole === 'admin' ? '/' : '/meus-setores';
+    const home = primaryRole === 'admin' ? '/' : primaryRole === 'gerente' ? '/relatorios' : '/meus-setores';
     return NextResponse.redirect(new URL(home, request.url));
   }
 
@@ -51,7 +51,7 @@ export async function proxy(request: NextRequest) {
     .map(([role]) => role);
 
   if (!hasAnyRole(payload.roles || [], allowedRoles as Role[])) {
-    const home = primaryRole === 'admin' ? '/' : '/meus-setores';
+    const home = primaryRole === 'admin' ? '/' : primaryRole === 'gerente' ? '/relatorios' : '/meus-setores';
     return NextResponse.redirect(new URL(home, request.url));
   }
 

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "wrangler d1 migrations apply prado-trocas-db --local"
+    "db:migrate": "wrangler d1 migrations apply prado-trocas-db --local",
+    "db:seed": "npx tsx src/scripts/seed.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.10",

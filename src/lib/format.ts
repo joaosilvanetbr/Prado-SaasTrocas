@@ -23,6 +23,15 @@ export function formatDate(value: string | Date): string {
   });
 }
 
+export function formatDateBR(value: string | Date): string {
+  return formatDate(value);
+}
+
+export function formatInputDate(value: string | Date): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return date.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
 export function formatDateLong(value: string | Date): string {
   const date = typeof value === 'string' ? new Date(value) : value;
   return date.toLocaleDateString('pt-BR', {

@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { formatCurrency } from '@/lib/format';
 import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import KPIGroup from '@/components/ui/KPICard';
 import { useReports } from '@/hooks/useReports';
 
@@ -22,6 +23,7 @@ interface LancamentosClientProps {
 export default function LancamentosClient({ initialSectors, date }: LancamentosClientProps) {
   const [sectors, setSectors] = useState<Sector[]>(initialSectors);
   const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({});
+  const [showConfirm, setShowConfirm] = useState(false);
   const { saveDailyReport, isSaving } = useReports();
 
   const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
@@ -63,6 +65,20 @@ export default function LancamentosClient({ initialSectors, date }: LancamentosC
     }
   }
 
+  const handleZerarRealizados = () => {
+    const zeros = sectors.map(s => ({
+      sector_id: s.id,
+      valor_realizado: 0,
+      valor_meta: s.meta,
+    }));
+    saveDailyReport({ date, sectors: zeros }, {
+      onSuccess: () => {
+        setSectors(prev => prev.map(s => ({ ...s, realizado: 0 })));
+        setShowConfirm(false);
+      },
+    });
+  };
+
   const totalMeta      = sectors.reduce((a, s) => a + s.meta, 0);
   const totalRealizado = sectors.reduce((a, s) => a + s.realizado, 0);
   const diferenca      = totalRealizado - totalMeta;
@@ -77,11 +93,23 @@ export default function LancamentosClient({ initialSectors, date }: LancamentosC
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => setSectors(prev => prev.map(s => ({ ...s, realizado: 0 })))}
+          onClick={() => setShowConfirm(true)}
         >
           Zerar Realizados
         </Button>
       </div>
+
+      <Modal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        title="Zerar Realizados"
+        description="Tem certeza que deseja definir todos os realizados como zero?"
+      >
+        <div className="flex gap-3 justify-end">
+          <Button variant="secondary" size="sm" onClick={() => setShowConfirm(false)}>Cancelar</Button>
+          <Button variant="primary" size="sm" onClick={handleZerarRealizados}>Zerar</Button>
+        </div>
+      </Modal>
 
       <div className="flex-1 p-8 space-y-6">
         <KPIGroup realizado={totalRealizado} meta={totalMeta} />

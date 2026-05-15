@@ -12,7 +12,7 @@ interface KPICardProps {
 }
 
 export function KPICard({ label, value, type = 'neutral', suffix, icon }: KPICardProps) {
-  const valueColor = type === 'positive' ? 'text-[#16a34a]' : type === 'negative' ? 'text-red-600' : 'text-[#1f2937]';
+  const valueColor = type === 'positive' ? 'text-red-600' : type === 'negative' ? 'text-[#16a34a]' : 'text-[#1f2937]';
 
   return (
     <Card variant="default" className="opacity-0 animate-fade-in">
@@ -45,7 +45,7 @@ export default function KPIGroup({ realizado, meta }: KPIGroupProps) {
         className={`relative overflow-hidden ${abaixoDaMeta ? 'bg-[#ffffe0] border-[#ffcc00]/30' : 'bg-red-50 border-red-200'}`}
       >
         <h3 className="text-xs font-semibold text-[#6b7280] uppercase tracking-wide mb-2">Diferença</h3>
-        <p className={`text-3xl font-bold tracking-tight ${abaixoDaMeta ? 'text-[#b39800]' : 'text-red-600'}`}>
+        <p className={`text-3xl font-bold tracking-tight ${abaixoDaMeta ? 'text-[#16a34a]' : 'text-red-600'}`}>
           {diferenca > 0 ? '+' : ''}{formatCurrency(diferenca)}
         </p>
         <div className={`absolute top-5 right-5 text-xs font-bold px-2 py-1 rounded ${
