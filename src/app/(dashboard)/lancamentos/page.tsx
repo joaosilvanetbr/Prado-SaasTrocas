@@ -20,7 +20,7 @@ export default async function LancamentosPage() {
     return {
       id: sector.id,
       nome: sector.nome,
-      meta: report?.valor_meta ?? 0,
+      meta: report?.valor_meta ?? (sector.meta || 0),
       realizado: report?.valor_realizado ?? 0,
     };
   });

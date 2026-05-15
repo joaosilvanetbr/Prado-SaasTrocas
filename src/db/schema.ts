@@ -12,6 +12,7 @@ export const users = pgTable('users', {
 export const sectors = pgTable('sectors', {
   id: serial('id').primaryKey(),
   nome: text('nome').notNull(),
+  meta: real('meta').notNull().default(0),
   comprador_id: integer('comprador_id').references(() => users.id),
   created_at: timestamp('created_at').defaultNow(),
 });

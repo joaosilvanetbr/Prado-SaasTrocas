@@ -1,0 +1,1 @@
+ALTER TABLE "sectors" ADD COLUMN "meta" real DEFAULT 0 NOT NULL;

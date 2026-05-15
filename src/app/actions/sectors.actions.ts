@@ -7,22 +7,26 @@ import { z } from 'zod';
 
 const createSectorSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(100),
+  meta: z.number().min(0).default(0),
   comprador_id: z.number().int().positive().nullable().optional(),
 });
 
 const updateSectorSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(100).optional(),
+  meta: z.number().min(0).optional(),
   comprador_id: z.number().int().positive().nullable().optional(),
 });
 
 export async function createSectorAction(formData: FormData) {
   const rawData = {
     nome: formData.get('nome') as string,
+    meta: formData.get('meta') as string || '0',
     comprador_id: formData.get('comprador_id') as string || '',
   };
 
   const parseResult = createSectorSchema.safeParse({
     nome: rawData.nome,
+    meta: rawData.meta ? parseFloat(rawData.meta) : 0,
     comprador_id: rawData.comprador_id ? parseInt(rawData.comprador_id) : null,
   });
 
@@ -30,10 +34,10 @@ export async function createSectorAction(formData: FormData) {
     return { error: parseResult.error.issues.map(e => e.message).join(', ') };
   }
 
-  const { nome, comprador_id } = parseResult.data;
+  const { nome, meta, comprador_id } = parseResult.data;
 
   try {
-    const result = await db.insert(sectors).values({ nome, comprador_id }).returning();
+    const result = await db.insert(sectors).values({ nome, meta, comprador_id }).returning();
     return { success: true, sector: result[0] };
   } catch (error) {
     console.error('Error creating sector:', error);
@@ -73,6 +77,7 @@ export async function updateSectorAction(id: number, data: Record<string, unknow
   try {
     const updateData: Record<string, unknown> = {};
     if (parseResult.data.nome !== undefined) updateData.nome = parseResult.data.nome;
+    if (parseResult.data.meta !== undefined) updateData.meta = parseResult.data.meta;
     if (parseResult.data.comprador_id !== undefined) updateData.comprador_id = parseResult.data.comprador_id;
 
     await db.update(sectors).set(updateData).where(eq(sectors.id, id));

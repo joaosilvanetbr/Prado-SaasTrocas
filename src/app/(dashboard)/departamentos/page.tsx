@@ -12,6 +12,7 @@ import { useSectors } from '@/hooks/useSectors';
 interface Setor {
   id: number;
   nome: string;
+  meta: number;
   comprador_id: number | null;
   created_at?: Date | null;
 }
@@ -31,7 +32,7 @@ export default function DepartamentosPage() {
   }
 
   function openEdit(setor: Setor) {
-    setForm({ nome: setor.nome, meta: '' });
+    setForm({ nome: setor.nome, meta: String(setor.meta || '') });
     setEditingId(setor.id);
     setShowForm(true);
   }
@@ -41,11 +42,11 @@ export default function DepartamentosPage() {
 
     const formData = new FormData();
     formData.append('nome', form.nome.trim());
-    if (form.meta) formData.append('meta', form.meta);
+    formData.append('meta', form.meta);
 
     try {
       if (editingId !== null) {
-        await updateSector({ id: editingId, data: { nome: form.nome.trim() } });
+        await updateSector({ id: editingId, data: { nome: form.nome.trim(), meta: parseFloat(form.meta) || 0 } });
       } else {
         await createSector(formData);
       }
@@ -68,7 +69,7 @@ export default function DepartamentosPage() {
     }
   }
 
-  const totalMeta = sectors.length * 10000;
+  const totalMeta = sectors.reduce((a, s) => a + (s.meta || 0), 0);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -120,7 +121,7 @@ export default function DepartamentosPage() {
               <thead className="text-[#6b7280] text-xs uppercase font-semibold border-b border-gray-100">
                 <tr>
                   <th className="px-6 py-4">Departamento</th>
-                  <th className="px-6 py-4">ID Comprador</th>
+                  <th className="px-6 py-4">Meta</th>
                   <th className="px-6 py-4 text-center">Ações</th>
                 </tr>
               </thead>
@@ -128,9 +129,7 @@ export default function DepartamentosPage() {
                 {sectors.map((setor) => (
                   <tr key={setor.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-semibold text-[#1f2937]">{setor.nome}</td>
-                    <td className="px-6 py-4 text-[#6b7280]">
-                      {setor.comprador_id || <span className="italic text-[#9ca3af]">Não atribuído</span>}
-                    </td>
+                    <td className="px-6 py-4 text-[#1e40af]">{formatCurrency(setor.meta || 0)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => openEdit(setor)} title="Editar" className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-[#1e40af] hover:border-[#1e40af] transition-colors">
@@ -166,6 +165,21 @@ export default function DepartamentosPage() {
                 placeholder="ex: Açougue, Padaria, Hortifruti..."
                 className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#1f2937] placeholder-[#9ca3af] rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-colors"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#374151] mb-1.5">Meta Diária (R$) *</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6b7280] text-sm">R$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.meta}
+                  onChange={e => setForm(f => ({ ...f, meta: e.target.value }))}
+                  placeholder="0,00"
+                  className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#1f2937] rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-colors"
+                />
+              </div>
             </div>
           </div>
           <div className="flex gap-3 justify-end mt-6">
