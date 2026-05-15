@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as client from '@/app/actions/sectors.actions';
+import * as sectorsClient from '@/app/actions/sectors.actions';
+import * as usersClient from '@/app/actions/users.actions';
 
 export function useSectors() {
   const queryClient = useQueryClient();
@@ -9,7 +10,7 @@ export function useSectors() {
   const listSectors = useQuery({
     queryKey: ['sectors'],
     queryFn: async () => {
-      const result = await client.listSectorsAction();
+      const result = await sectorsClient.listSectorsAction();
       if (result.error) throw new Error(result.error);
       return result.sectors;
     },
@@ -18,7 +19,7 @@ export function useSectors() {
   const listSectorsWithComprador = useQuery({
     queryKey: ['sectors', 'withComprador'],
     queryFn: async () => {
-      const result = await client.listSectorsWithCompradorAction();
+      const result = await sectorsClient.listSectorsWithCompradorAction();
       if (result.error) throw new Error(result.error);
       return result.sectors;
     },
@@ -26,7 +27,7 @@ export function useSectors() {
 
   const createSector = useMutation({
     mutationFn: async (formData: FormData) => {
-      const result = await client.createSectorAction(formData);
+      const result = await sectorsClient.createSectorAction(formData);
       if (result.error) throw new Error(result.error);
       return result;
     },
@@ -37,7 +38,7 @@ export function useSectors() {
 
   const updateSector = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Record<string, unknown> }) => {
-      const result = await client.updateSectorAction(id, data);
+      const result = await sectorsClient.updateSectorAction(id, data);
       if (result.error) throw new Error(result.error);
       return result;
     },
@@ -48,7 +49,7 @@ export function useSectors() {
 
   const deleteSector = useMutation({
     mutationFn: async (id: number) => {
-      const result = await client.deleteSectorAction(id);
+      const result = await sectorsClient.deleteSectorAction(id);
       if (result.error) throw new Error(result.error);
       return result;
     },
@@ -57,9 +58,19 @@ export function useSectors() {
     },
   });
 
+  const listCompradores = useQuery({
+    queryKey: ['compradores'],
+    queryFn: async () => {
+      const result = await usersClient.listCompradoresAction();
+      if (result.error) throw new Error(result.error);
+      return result.compradores;
+    },
+  });
+
   return {
     sectors: listSectors.data ?? [],
     sectorsWithComprador: listSectorsWithComprador.data ?? [],
+    compradores: listCompradores.data ?? [],
     isLoading: listSectors.isLoading,
     isError: listSectors.isError,
     createSector: createSector.mutate,

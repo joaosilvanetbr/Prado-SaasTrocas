@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { formatCurrency, formatDateBR, formatInputDate } from '@/lib/format';
-import KPICard from '@/components/ui/KPICard';
+import { KPICard } from '@/components/ui/KPICard';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { useQuery } from '@tanstack/react-query';
@@ -108,43 +108,45 @@ export default function RelatoriosClient() {
               Nenhum lançamento encontrado para o período selecionado.
             </div>
           ) : (
-            <table className="w-full text-sm text-left">
-              <thead className="text-[#6b7280] text-xs uppercase font-semibold border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4">Data</th>
-                  <th className="px-6 py-4">Setor</th>
-                  <th className="px-6 py-4">Realizado</th>
-                  <th className="px-6 py-4">Meta (Limite)</th>
-                  <th className="px-6 py-4">Diferença</th>
-                  <th className="px-6 py-4">Percentual</th>
-                  <th className="px-6 py-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {reports.map((r: { id: number; date: string; sectorName: string; realizado: number; meta: number; diferenca: number; percentual: number; status: string; statusVariant: string }, idx: number) => {
-                  const pos = r.diferenca >= 0;
-                  return (
-                    <tr key={r.id || idx} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-[#1f2937]">{formatDateBR(r.date)}</td>
-                      <td className="px-6 py-4 font-semibold text-[#1f2937]">{r.sectorName || '-'}</td>
-                      <td className="px-6 py-4 text-[#1f2937]">{formatCurrency(r.realizado)}</td>
-                      <td className="px-6 py-4 text-[#6b7280]">{formatCurrency(r.meta)}</td>
-                      <td className={`px-6 py-4 font-bold ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>
-                        {pos ? '+' : ''}{formatCurrency(r.diferenca)}
-                      </td>
-                      <td className={`px-6 py-4 font-medium ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>
-                        {r.percentual.toFixed(0)}%
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge variant={r.statusVariant as 'success' | 'warning' | 'error' | 'info'} size="sm">
-                          {statusLabels[r.status] || r.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-[#6b7280] text-xs uppercase font-semibold border-b border-gray-100">
+                  <tr>
+                    <th className="px-6 py-4">Data</th>
+                    <th className="px-6 py-4">Setor</th>
+                    <th className="px-6 py-4">Realizado</th>
+                    <th className="px-6 py-4">Meta (Limite)</th>
+                    <th className="px-6 py-4">Diferença</th>
+                    <th className="px-6 py-4">Percentual</th>
+                    <th className="px-6 py-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {reports.map((r: { id: number; date: string; sectorName?: string; realizado: number; meta: number; diferenca: number; percentual: number; status: string; statusVariant: string }, idx: number) => {
+                    const pos = r.diferenca >= 0;
+                    return (
+                      <tr key={r.id || idx} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 text-[#1f2937]">{formatDateBR(r.date)}</td>
+                        <td className="px-6 py-4 font-semibold text-[#1f2937]">{r.sectorName || '-'}</td>
+                        <td className="px-6 py-4 text-[#1f2937]">{formatCurrency(r.realizado)}</td>
+                        <td className="px-6 py-4 text-[#6b7280]">{formatCurrency(r.meta)}</td>
+                        <td className={`px-6 py-4 font-bold ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>
+                          {pos ? '+' : ''}{formatCurrency(r.diferenca)}
+                        </td>
+                        <td className={`px-6 py-4 font-medium ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>
+                          {r.percentual.toFixed(0)}%
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge variant={r.statusVariant as 'success' | 'warning' | 'error' | 'info'} size="sm">
+                            {statusLabels[r.status] || r.status}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

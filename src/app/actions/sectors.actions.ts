@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db';
-import { sectors, users } from '@/db/schema';
+import { sectors, users, daily_reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -90,6 +90,12 @@ export async function updateSectorAction(id: number, data: Record<string, unknow
 
 export async function deleteSectorAction(id: number) {
   try {
+    // Check if there are any daily_reports linked to this sector
+    const reports = await db.select().from(daily_reports).where(eq(daily_reports.sector_id, id)).limit(1);
+    if (reports.length > 0) {
+      return { error: 'Não é possível excluir este departamento porque existem lançamentos vinculados a ele.' };
+    }
+
     await db.delete(sectors).where(eq(sectors.id, id));
     return { success: true };
   } catch (error) {

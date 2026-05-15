@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { formatCurrency } from '@/lib/format';
-import KPICard from '@/components/ui/KPICard';
+import { KPICard } from '@/components/ui/KPICard';
 import Badge from '@/components/ui/Badge';
 import { useQuery } from '@tanstack/react-query';
 import * as meusSetoresActions from '@/app/actions/meus-setores.actions';
@@ -99,54 +99,56 @@ export default function MeusSetoresClient({ userSetores, isAdmin, totalSetores }
               Nenhum setor atribuído a este usuário.
             </div>
           ) : (
-            <table className="w-full text-sm text-left">
-              <thead className="text-[#6b7280] text-xs uppercase font-semibold border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4">Setor</th>
-                  <th className="px-6 py-4">Realizado</th>
-                  <th className="px-6 py-4">Meta (Limite)</th>
-                  <th className="px-6 py-4">Diferença</th>
-                  <th className="px-6 py-4">Percentual</th>
-                  <th className="px-6 py-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {sectors.map((s, idx) => {
-                  const pos = s.diferenca >= 0;
-                  const barW = Math.min(s.percentual, 100);
-                  const barColor = s.hasReport ? (pos ? 'bg-red-500' : 'bg-[#ffcc00]') : 'bg-gray-300';
-                  return (
-                    <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-semibold text-[#1f2937]">{s.nome}</td>
-                      <td className="px-6 py-4 min-w-[180px]">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[#1f2937] font-medium">{formatCurrency(s.realizado)}</span>
-                          <span className={`text-xs font-bold ml-4 ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>{s.percentual.toFixed(0)}%</span>
-                        </div>
-                        <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                            style={{ width: `${barW}%` }}
-                          />
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-[#6b7280]">{formatCurrency(s.meta)}</td>
-                      <td className={`px-6 py-4 font-bold ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>
-                        {pos ? '+' : ''}{formatCurrency(s.diferenca)}
-                      </td>
-                      <td className={`px-6 py-4 ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>
-                        {s.percentual.toFixed(0)}%
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center font-semibold rounded-full border text-xs px-2.5 py-0.5 ${statusColors[s.status] || statusColors.sem_lancamento}`}>
-                          {statusLabels[s.status] || 'Sem lançamento'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-[#6b7280] text-xs uppercase font-semibold border-b border-gray-100">
+                  <tr>
+                    <th className="px-6 py-4">Setor</th>
+                    <th className="px-6 py-4">Realizado</th>
+                    <th className="px-6 py-4">Meta (Limite)</th>
+                    <th className="px-6 py-4">Diferença</th>
+                    <th className="px-6 py-4">Percentual</th>
+                    <th className="px-6 py-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {sectors.map((s, idx) => {
+                    const pos = s.diferenca >= 0;
+                    const barW = Math.min(s.percentual, 100);
+                    const barColor = s.hasReport ? (pos ? 'bg-red-500' : 'bg-[#ffcc00]') : 'bg-gray-300';
+                    return (
+                      <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 font-semibold text-[#1f2937]">{s.nome}</td>
+                        <td className="px-6 py-4 min-w-[180px]">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[#1f2937] font-medium">{formatCurrency(s.realizado)}</span>
+                            <span className={`text-xs font-bold ml-4 ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>{s.percentual.toFixed(0)}%</span>
+                          </div>
+                          <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                              style={{ width: `${barW}%` }}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-[#6b7280]">{formatCurrency(s.meta)}</td>
+                        <td className={`px-6 py-4 font-bold ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>
+                          {pos ? '+' : ''}{formatCurrency(s.diferenca)}
+                        </td>
+                        <td className={`px-6 py-4 ${pos ? 'text-red-600' : 'text-[#16a34a]'}`}>
+                          {s.percentual.toFixed(0)}%
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center font-semibold rounded-full border text-xs px-2.5 py-0.5 ${statusColors[s.status] || statusColors.sem_lancamento}`}>
+                            {statusLabels[s.status] || 'Sem lançamento'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

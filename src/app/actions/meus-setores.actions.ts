@@ -5,7 +5,8 @@ import { sectors, daily_reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
-import { getJwtSecret, getTodayDate } from '@/lib/format';
+import { getJwtSecret } from '@/lib/env';
+import { getTodayDate } from '@/lib/format';
 import { calcularDiferenca, calcularPercentual, getStatusTrocas, type StatusTrocas } from '@/lib/performance';
 
 type StatusVariant = 'success' | 'warning' | 'error' | 'info';

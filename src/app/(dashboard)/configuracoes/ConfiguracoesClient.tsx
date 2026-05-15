@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { CheckIcon, WarningIcon } from '@/components/icons';
-import { updatePasswordAction } from '@/app/actions/users.actions';
+import { updatePasswordAction, updateCurrentUserProfileAction } from '@/app/actions/users.actions';
 
 interface UserData {
   id: number;
@@ -23,10 +23,27 @@ function PerfilContent({ user, onShowToast }: PerfilContentProps) {
   const [name, setName] = useState(user.nome);
 
   const handleSave = async () => {
+    if (!name.trim()) {
+      onShowToast('Nome é obrigatório.', 'error');
+      return;
+    }
+    if (name.length > 100) {
+      onShowToast('Nome deve ter no máximo 100 caracteres.', 'error');
+      return;
+    }
+    
     setSaving(true);
-    await new Promise(r => setTimeout(r, 600));
+    try {
+      const result = await updateCurrentUserProfileAction({ nome: name.trim() });
+      if (result.error) {
+        onShowToast(result.error, 'error');
+      } else {
+        onShowToast('Perfil atualizado com sucesso.');
+      }
+    } catch {
+      onShowToast('Erro ao atualizar perfil.', 'error');
+    }
     setSaving(false);
-    onShowToast('Perfil atualizado com sucesso.');
   };
 
   return (
