@@ -3,8 +3,6 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { getJwtSecret } from "@/lib/env";
 
-export const runtime = 'edge';
-
 interface UserPayload {
   sub: string;
   nome: string;
