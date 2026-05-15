@@ -95,7 +95,7 @@ export default function RelatoriosClient() {
               value={diferenca}
               type={diferenca > 0 ? 'positive' : 'negative'}
             />
-            <KPICard label="Registros" value={reports.length} type="neutral" />
+            <KPICard label="Registros" value={reports.length} type="neutral" formatAs="number" />
           </div>
         )}
 

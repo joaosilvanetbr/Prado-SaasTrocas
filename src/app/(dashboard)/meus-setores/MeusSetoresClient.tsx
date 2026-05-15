@@ -74,7 +74,7 @@ export default function MeusSetoresClient({ userSetores, isAdmin, totalSetores }
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-5">
-            <KPICard label="Setores Vinculados" value={sectors.length} type="neutral" />
+            <KPICard label="Setores Vinculados" value={sectors.length} type="neutral" formatAs="number" />
             <KPICard label="Total Realizado" value={totalRealizado} type="neutral" />
             <KPICard label="Meta (Limite)" value={totalMeta} type="neutral" />
             <KPICard

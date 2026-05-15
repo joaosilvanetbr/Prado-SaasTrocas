@@ -9,16 +9,19 @@ interface KPICardProps {
   type?: 'neutral' | 'positive' | 'negative';
   suffix?: string;
   icon?: React.ReactNode;
+  formatAs?: 'currency' | 'number';
 }
 
-export function KPICard({ label, value, type = 'neutral', suffix, icon }: KPICardProps) {
+export function KPICard({ label, value, type = 'neutral', suffix, icon, formatAs = 'currency' }: KPICardProps) {
   const valueColor = type === 'positive' ? 'text-red-600' : type === 'negative' ? 'text-[#16a34a]' : 'text-[#1f2937]';
+
+  const formattedValue = formatAs === 'currency' ? formatCurrency(value) : value.toLocaleString('pt-BR');
 
   return (
     <Card variant="default" className="opacity-0 animate-fade-in">
       <h3 className="text-xs font-semibold text-[#6b7280] uppercase tracking-wide mb-2">{label}</h3>
       <p className={`text-3xl font-bold tracking-tight ${valueColor}`}>
-        {formatCurrency(value)}
+        {formattedValue}
         {suffix && <span className="text-sm ml-1">{suffix}</span>}
       </p>
       {icon && <div className="absolute top-5 right-5">{icon}</div>}
