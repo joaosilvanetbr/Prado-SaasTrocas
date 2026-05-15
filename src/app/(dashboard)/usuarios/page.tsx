@@ -5,6 +5,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { SpinnerIcon, CheckIcon, WarningIcon, EditIcon, DeleteIcon, PlusIcon, SearchIcon } from '@/components/icons';
 import { useUsers } from '@/hooks/useUsers';
+import { useSectors } from '@/hooks/useSectors';
 import { formatCurrency } from '@/lib/format';
 
 interface User {
@@ -26,7 +27,7 @@ interface UserForm {
   nome: string;
   password: string;
   role: string;
-  setores: string;
+  setores: number[];
   status: boolean;
 }
 
@@ -52,11 +53,12 @@ function ToastNotification({ toast, onClose }: { toast: Toast; onClose: () => vo
 
 export default function UsuariosPage() {
   const { users, isLoading, isError, createUser, updateUser, deleteUser, isCreating, isUpdating, isDeleting } = useUsers();
+  const { sectors } = useSectors();
   const [search, setSearch] = useState('');
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; user: User | null }>({ show: false, user: null });
   const [formModal, setFormModal] = useState<{ show: boolean; mode: 'create' | 'edit'; user: User | null }>({ show: false, mode: 'create', user: null });
-  const [form, setForm] = useState<UserForm>({ nome: '', password: '', role: 'comprador', setores: '', status: true });
+  const [form, setForm] = useState<UserForm>({ nome: '', password: '', role: 'comprador', setores: [], status: true });
   const [errors, setErrors] = useState<Partial<Record<keyof UserForm, string>>>({});
 
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
@@ -83,17 +85,20 @@ export default function UsuariosPage() {
   };
 
   const openCreate = () => {
-    setForm({ nome: '', password: '', role: 'comprador', setores: '', status: true });
+    setForm({ nome: '', password: '', role: 'comprador', setores: [], status: true });
     setErrors({});
     setFormModal({ show: true, mode: 'create', user: null });
   };
 
   const openEdit = (user: User) => {
+    const setoresArray = user.setores
+      ? user.setores.split(',').filter(Boolean).map(s => parseInt(s.trim()))
+      : [];
     setForm({
       nome: user.nome,
       password: '',
       role: user.role,
-      setores: user.setores || '',
+      setores: setoresArray,
       status: true,
     });
     setErrors({});
@@ -120,12 +125,12 @@ export default function UsuariosPage() {
     const formData = new FormData();
     formData.append('nome', form.nome.trim());
     formData.append('role', form.role);
-    formData.append('setores', form.setores);
+    formData.append('setores', form.setores.join(','));
     if (form.password) formData.append('password', form.password);
 
     try {
       if (formModal.mode === 'edit' && formModal.user) {
-        await updateUser({ id: formModal.user.id, data: { nome: form.nome, role: form.role, setores: form.setores } });
+        await updateUser({ id: formModal.user.id, data: { nome: form.nome, role: form.role, setores: form.setores.join(',') } });
         showToast(`${form.nome.trim()} atualizado.`);
       } else {
         formData.append('password', form.password);
@@ -244,15 +249,34 @@ export default function UsuariosPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-1">Setores (separados por vírgula)</label>
-                <input
-                  type="text"
-                  value={form.setores}
-                  onChange={e => setForm(f => ({ ...f, setores: e.target.value }))}
-                  placeholder="1, 2, 3"
-                  className="w-full bg-white border border-gray-200 text-[#1f2937] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 transition-colors"
-                />
-                <p className="text-xs text-[#9ca3af] mt-1">IDs dos setores separados por vírgula. Deixe vazio para todos.</p>
+                <label className="block text-sm font-medium text-[#374151] mb-2">Departamentos</label>
+                <div className="flex flex-wrap gap-2">
+                  {sectors.map(s => {
+                    const selected = form.setores.includes(s.id);
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          setForm(f => ({
+                            ...f,
+                            setores: selected
+                              ? f.setores.filter(id => id !== s.id)
+                              : [...f.setores, s.id],
+                          }));
+                        }}
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                          selected
+                            ? 'border-[#1e40af] bg-[#1e40af]/5 text-[#1e40af]'
+                            : 'border-gray-200 text-[#6b7280] hover:border-gray-300'
+                        }`}
+                      >
+                        {s.nome}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-[#9ca3af] mt-1">Selecione os departamentos. Deixe vazio para todos.</p>
               </div>
             </div>
 
@@ -311,9 +335,8 @@ export default function UsuariosPage() {
                   <td colSpan={5} className="px-6 py-8 text-center text-[#6b7280]">Nenhum usuário encontrado.</td>
                 </tr>
               ) : filteredUsers.map((user) => {
-                const setorNames = user.setores
-                  ? user.setores.split(',').filter(Boolean).map(s => s.trim()).join(', ')
-                  : 'Todos';
+                const setoresArr = user.setores ? user.setores.split(',').filter(Boolean).map(s => parseInt(s.trim())) : [];
+                const setorNames = setoresArr.length > 0 ? setoresArr.map(id => sectors.find(s => s.id === id)?.nome).filter(Boolean).join(', ') : 'Todos';
                 return (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">

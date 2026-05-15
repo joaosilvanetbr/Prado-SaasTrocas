@@ -38,7 +38,7 @@ export default function LancamentosClient({ initialSectors, date }: LancamentosC
     }, {
       onSuccess: () => {
         setSaveStates(prev => ({ ...prev, [sector.id]: 'saved' }));
-        setTimeout(() => setSaveStates(prev => ({ ...prev, [sector.id]: 'idle' })), 2000);
+        setTimeout(() => { setSaveStates(prev => ({ ...prev, [sector.id]: 'idle' })); }, 2000);
       },
       onError: () => {
         setSaveStates(prev => ({ ...prev, [sector.id]: 'idle' }));
@@ -46,7 +46,7 @@ export default function LancamentosClient({ initialSectors, date }: LancamentosC
     });
   }, [date, saveDailyReport]);
 
-  function handleChange(id: number, field: 'meta' | 'realizado', raw: string) {
+  function handleChange(id: number, field: 'realizado', raw: string) {
     const value = parseFloat(raw.replace(',', '.')) || 0;
     setSectors(prev => prev.map(s => {
       if (s.id !== id) return s;
@@ -55,11 +55,10 @@ export default function LancamentosClient({ initialSectors, date }: LancamentosC
     }));
   }
 
-  function handleBlur(id: number, field: 'meta' | 'realizado', raw: string) {
-    handleChange(id, field, raw);
+  function handleBlur(id: number, raw: string) {
     const sector = sectors.find(s => s.id === id);
     if (sector) {
-      const updated = { ...sector, [field]: parseFloat(raw.replace(',', '.')) || 0 };
+      const updated = { ...sector, realizado: parseFloat(raw.replace(',', '.')) || 0 };
       autoSave(updated);
     }
   }
@@ -128,7 +127,7 @@ export default function LancamentosClient({ initialSectors, date }: LancamentosC
                       </div>
                     </td>
                     <td className="px-6 py-3">
-                      <input type="number" step="0.01" defaultValue={s.realizado} onBlur={e => handleBlur(s.id, 'realizado', e.target.value)}
+                      <input type="number" step="0.01" defaultValue={s.realizado} onBlur={e => handleBlur(s.id, e.target.value)}
                         className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#1f2937] rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors mb-1.5" />
                       <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
                         <div
@@ -137,12 +136,8 @@ export default function LancamentosClient({ initialSectors, date }: LancamentosC
                         />
                       </div>
                     </td>
-                    <td className="px-6 py-3">
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af] text-xs">R$</span>
-                        <input type="number" step="0.01" defaultValue={s.meta} onBlur={e => handleBlur(s.id, 'meta', e.target.value)}
-                          className="w-full bg-white border border-gray-300 hover:border-[#1e40af] focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 text-[#6b7280] rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none transition-colors" />
-                      </div>
+                    <td className="px-6 py-4 text-[#1e40af] font-semibold">
+                      {formatCurrency(s.meta)}
                     </td>
                     <td className={`px-6 py-4 text-center font-bold text-sm ${bom ? 'text-[#16a34a]' : 'text-red-600'}`}>
                       {dif > 0 ? '+' : ''}{formatCurrency(dif)}
