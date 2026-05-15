@@ -34,9 +34,20 @@ export function useAuth(): UseAuthReturn {
           return;
         }
 
-        const secret = new TextEncoder().encode(process.env.NEXT_PUBLIC_JWT_SECRET || 'fallback');
-        const { payload } = await jwtVerify(token, secret);
-        setUser(payload as unknown as UserPayload);
+        const response = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+
+        if (!response.ok) {
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        setUser(data.payload);
       } catch {
         setUser(null);
       } finally {

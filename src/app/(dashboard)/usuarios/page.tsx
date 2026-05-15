@@ -4,31 +4,17 @@ import React, { useState, useCallback } from 'react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { SpinnerIcon, CheckIcon, WarningIcon, EditIcon, DeleteIcon, PlusIcon, SearchIcon } from '@/components/icons';
-
-interface Setor {
-  id: number;
-  nome: string;
-}
+import { useUsers } from '@/hooks/useUsers';
+import { formatCurrency } from '@/lib/format';
 
 interface User {
   id: number;
-  initials: string;
-  name: string;
-  roles: string[];
-  setores: number[];
-  lastAccess: string;
-  status: 'Ativo' | 'Inativo';
+  nome: string;
+  password_hash?: string;
+  role: string;
+  setores: string;
+  created_at?: Date;
 }
-
-const SHARED_SETORES: Setor[] = [
-  { id: 1, nome: 'Açougue' },
-  { id: 2, nome: 'Bebidas' },
-  { id: 3, nome: 'Petshop' },
-  { id: 4, nome: 'Higiene' },
-  { id: 5, nome: 'Mercearia' },
-  { id: 6, nome: 'Padaria' },
-  { id: 7, nome: 'Hortifruti' },
-];
 
 const ALL_ROLES = [
   { value: 'admin', label: 'Admin', color: 'text-[#7c3aed] bg-purple-100 border-purple-200' },
@@ -36,20 +22,11 @@ const ALL_ROLES = [
   { value: 'comprador', label: 'Comprador', color: 'text-[#b39800] bg-[#ffff00] border-[#ffcc00]/30' },
 ];
 
-const INITIAL_USERS: User[] = [
-  { id: 1, initials: 'CS', name: 'Carlos Silva',   roles: ['admin'],                   setores: [],       lastAccess: 'Hoje, 08:30',  status: 'Ativo'   },
-  { id: 2, initials: 'MR', name: 'Mariana Rocha',  roles: ['gerente'],                 setores: [1, 2],   lastAccess: 'Ontem, 17:45', status: 'Ativo'   },
-  { id: 3, initials: 'FP', name: 'Fernando Pinto', roles: ['comprador'],               setores: [1, 4],   lastAccess: '12/05/2024',   status: 'Inativo' },
-  { id: 4, initials: 'AS', name: 'Ana Souza',      roles: ['comprador'],               setores: [1, 4],   lastAccess: 'Hoje, 07:15',  status: 'Ativo'   },
-  { id: 5, initials: 'RL', name: 'Ricardo Lima',  roles: ['comprador'],               setores: [3],      lastAccess: 'Ontem, 09:00', status: 'Ativo'   },
-  { id: 6, initials: 'PM', name: 'Patrícia Moura', roles: ['gerente', 'comprador'],   setores: [2, 5],   lastAccess: 'Ontem, 16:00', status: 'Ativo'   },
-];
-
 interface UserForm {
-  name: string;
+  nome: string;
   password: string;
-  roles: string[];
-  setores: number[];
+  role: string;
+  setores: string;
   status: boolean;
 }
 
@@ -74,14 +51,12 @@ function ToastNotification({ toast, onClose }: { toast: Toast; onClose: () => vo
 }
 
 export default function UsuariosPage() {
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const { users, isLoading, isError, createUser, updateUser, deleteUser, isCreating, isUpdating, isDeleting } = useUsers();
   const [search, setSearch] = useState('');
-  const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [deleteModal, setDeleteModal] = useState<{ show: boolean; index: number | null; name: string }>({ show: false, index: null, name: '' });
-  const [formModal, setFormModal] = useState<{ show: boolean; mode: 'create' | 'edit'; index: number | null }>({ show: false, mode: 'create', index: null });
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<UserForm>({ name: '', password: '', roles: [], setores: [], status: true });
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; user: User | null }>({ show: false, user: null });
+  const [formModal, setFormModal] = useState<{ show: boolean; mode: 'create' | 'edit'; user: User | null }>({ show: false, mode: 'create', user: null });
+  const [form, setForm] = useState<UserForm>({ nome: '', password: '', role: 'comprador', setores: '', status: true });
   const [errors, setErrors] = useState<Partial<Record<keyof UserForm, string>>>({});
 
   const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
@@ -94,126 +69,93 @@ export default function UsuariosPage() {
   };
 
   const filteredUsers = users.filter(u =>
-    u.name.toLowerCase().includes(search.toLowerCase())
+    u.nome.toLowerCase().includes(search.toLowerCase())
   );
 
-  const getRolesLabel = (roles: string[]) => {
-    return roles.map(r => r.charAt(0).toUpperCase() + r.slice(1)).join(' / ');
+  const getRolesLabel = (role: string) => {
+    return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
-  const getRolesColor = (roles: string[]) => {
-    if (roles.includes('admin')) return 'text-[#7c3aed] bg-purple-100 border-purple-200';
-    if (roles.includes('gerente') && roles.length === 1) return 'text-[#0369a1] bg-sky-100 border-sky-200';
+  const getRolesColor = (role: string) => {
+    if (role === 'admin') return 'text-[#7c3aed] bg-purple-100 border-purple-200';
+    if (role === 'gerente') return 'text-[#0369a1] bg-sky-100 border-sky-200';
     return 'text-[#b39800] bg-[#ffff00] border-[#ffcc00]/30';
   };
 
-  const toggleStatus = async (index: number) => {
-    setLoadingIndex(index);
-    await new Promise(r => setTimeout(r, 500));
-    setUsers(prev => prev.map((u, i) =>
-      i === index ? { ...u, status: u.status === 'Ativo' ? 'Inativo' : 'Ativo' } : u
-    ));
-    setLoadingIndex(null);
-    const user = users[index];
-    showToast(`${user.name} ${user.status === 'Ativo' ? 'inativado' : 'ativado'}.`);
-  };
-
-  const confirmDelete = (index: number) => {
-    const user = users[index];
-    setDeleteModal({ show: true, index, name: user.name });
-  };
-
-  const executeDelete = () => {
-    if (deleteModal.index !== null) {
-      const userName = users[deleteModal.index].name;
-      setUsers(prev => prev.filter((_, i) => i !== deleteModal.index));
-      showToast(`${userName} excluído.`);
-    }
-    setDeleteModal({ show: false, index: null, name: '' });
-  };
-
   const openCreate = () => {
-    setForm({ name: '', password: '', roles: [], setores: [], status: true });
+    setForm({ nome: '', password: '', role: 'comprador', setores: '', status: true });
     setErrors({});
-    setFormModal({ show: true, mode: 'create', index: null });
+    setFormModal({ show: true, mode: 'create', user: null });
   };
 
-  const openEdit = (index: number) => {
-    const u = users[index];
+  const openEdit = (user: User) => {
     setForm({
-      name: u.name,
+      nome: user.nome,
       password: '',
-      roles: [...u.roles],
-      setores: [...u.setores],
-      status: u.status === 'Ativo',
+      role: user.role,
+      setores: user.setores || '',
+      status: true,
     });
     setErrors({});
-    setFormModal({ show: true, mode: 'edit', index });
+    setFormModal({ show: true, mode: 'edit', user });
   };
 
   const closeModal = () => {
-    if (saving) return;
-    setFormModal({ show: false, mode: 'create', index: null });
-  };
-
-  const toggleRole = (role: string) => {
-    setForm(f => ({
-      ...f,
-      roles: f.roles.includes(role)
-        ? f.roles.filter(r => r !== role)
-        : [...f.roles, role],
-    }));
-    setErrors(e => ({ ...e, roles: undefined }));
-  };
-
-  const toggleSetor = (setorId: number) => {
-    setForm(f => ({
-      ...f,
-      setores: f.setores.includes(setorId)
-        ? f.setores.filter(s => s !== setorId)
-        : [...f.setores, setorId],
-    }));
+    if (isCreating || isUpdating) return;
+    setFormModal({ show: false, mode: 'create', user: null });
   };
 
   const validateForm = () => {
     const newErrors: Partial<Record<keyof UserForm, string>> = {};
-    if (!form.name.trim()) newErrors.name = 'Nome é obrigatório';
+    if (!form.nome.trim()) newErrors.nome = 'Nome é obrigatório';
     if (formModal.mode === 'create' && !form.password.trim()) newErrors.password = 'Senha é obrigatória';
-    if (form.roles.length === 0) newErrors.roles = 'Selecione pelo menos um cargo';
+    if (form.password.length > 0 && form.password.length < 6) newErrors.password = 'Senha deve ter no mínimo 6 caracteres';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
     if (!validateForm()) return;
-    setSaving(true);
-    await new Promise(r => setTimeout(r, 600));
 
-    if (formModal.mode === 'edit' && formModal.index !== null) {
-      setUsers(prev => prev.map((u, i) => {
-        if (i !== formModal.index) return u;
-        return { ...u, name: form.name.trim(), roles: [...form.roles], setores: [...form.setores], status: form.status ? 'Ativo' : 'Inativo' };
-      }));
-      showToast(`${form.name.trim()} atualizado.`);
-    } else {
-      const parts = form.name.trim().split(' ');
-      const initials = parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : form.name.slice(0, 2).toUpperCase();
-      const newUser: User = {
-        id: Math.max(...users.map(u => u.id), 0) + 1,
-        initials,
-        name: form.name.trim(),
-        roles: [...form.roles],
-        setores: [...form.setores],
-        lastAccess: 'Nunca',
-        status: form.status ? 'Ativo' : 'Inativo',
-      };
-      setUsers(prev => [newUser, ...prev]);
-      showToast(`${form.name.trim()} criado.`);
+    const formData = new FormData();
+    formData.append('nome', form.nome.trim());
+    formData.append('role', form.role);
+    formData.append('setores', form.setores);
+    if (form.password) formData.append('password', form.password);
+
+    try {
+      if (formModal.mode === 'edit' && formModal.user) {
+        await updateUser({ id: formModal.user.id, data: { nome: form.nome, role: form.role, setores: form.setores } });
+        showToast(`${form.nome.trim()} atualizado.`);
+      } else {
+        formData.append('password', form.password);
+        await createUser(formData);
+        showToast(`${form.nome.trim()} criado.`);
+      }
+      setFormModal({ show: false, mode: 'create', user: null });
+    } catch {
+      showToast('Erro ao salvar usuário.', 'error');
     }
-
-    setSaving(false);
-    setFormModal({ show: false, mode: 'create', index: null });
   };
+
+  const handleDelete = async () => {
+    if (!deleteModal.user) return;
+    try {
+      await deleteUser(deleteModal.user.id);
+      showToast(`${deleteModal.user.nome} excluído.`);
+      setDeleteModal({ show: false, user: null });
+    } catch {
+      showToast('Erro ao excluir usuário.', 'error');
+    }
+  };
+
+  if (isError) {
+    return (
+      <div className="flex flex-col min-h-screen bg-white items-center justify-center">
+        <p className="text-red-600">Erro ao carregar usuários.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -233,10 +175,10 @@ export default function UsuariosPage() {
                 <p className="text-[#6b7280] text-sm">Esta ação não pode ser desfeita.</p>
               </div>
             </div>
-            <p className="text-[#374151] mb-6">Excluir <span className="font-semibold">{deleteModal.name}</span>?</p>
+            <p className="text-[#374151] mb-6">Excluir <span className="font-semibold">{deleteModal.user?.nome}</span>?</p>
             <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1" onClick={() => setDeleteModal({ show: false, index: null, name: '' })}>Cancelar</Button>
-              <Button variant="danger" className="flex-1" onClick={executeDelete}>Excluir</Button>
+              <Button variant="secondary" className="flex-1" onClick={() => setDeleteModal({ show: false, user: null })}>Cancelar</Button>
+              <Button variant="danger" className="flex-1" onClick={handleDelete} loading={isDeleting}>Excluir</Button>
             </div>
           </div>
         </div>
@@ -260,12 +202,12 @@ export default function UsuariosPage() {
                 <label className="block text-sm font-medium text-[#374151] mb-1">Nome <span className="text-red-500">*</span></label>
                 <input
                   type="text"
-                  value={form.name}
-                  onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setErrors(err => ({ ...err, name: undefined })); }}
+                  value={form.nome}
+                  onChange={e => { setForm(f => ({ ...f, nome: e.target.value })); setErrors(err => ({ ...err, nome: undefined })); }}
                   placeholder="Ex: João Silva"
-                  className={`w-full bg-white border ${errors.name ? 'border-red-400' : 'border-gray-200'} text-[#1f2937] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 transition-colors`}
+                  className={`w-full bg-white border ${errors.nome ? 'border-red-400' : 'border-gray-200'} text-[#1f2937] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 transition-colors`}
                 />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                {errors.nome && <p className="text-red-500 text-xs mt-1">{errors.nome}</p>}
               </div>
 
               {formModal.mode === 'create' && (
@@ -283,15 +225,15 @@ export default function UsuariosPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Cargos <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-[#374151] mb-2">Cargo <span className="text-red-500">*</span></label>
                 <div className="flex gap-2">
                   {ALL_ROLES.map(r => {
-                    const selected = form.roles.includes(r.value);
+                    const selected = form.role === r.value;
                     return (
                       <button
                         key={r.value}
                         type="button"
-                        onClick={() => toggleRole(r.value)}
+                        onClick={() => setForm(f => ({ ...f, role: r.value }))}
                         className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${selected ? `${r.color} ring-2 ring-[#1e40af]/30` : 'border-gray-200 text-[#6b7280] hover:border-gray-300 hover:scale-105 active:scale-95'}`}
                       >
                         {r.label}
@@ -299,47 +241,25 @@ export default function UsuariosPage() {
                     );
                   })}
                 </div>
-                {errors.roles && <p className="text-red-500 text-xs mt-1">{errors.roles}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#374151] mb-2">Setores</label>
-                <div className="flex flex-wrap gap-2">
-                  {SHARED_SETORES.map(s => {
-                    const selected = form.setores.includes(s.id);
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => toggleSetor(s.id)}
-                        className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${selected ? 'border-[#1e40af] bg-[#1e40af]/5 text-[#1e40af]' : 'border-gray-200 text-[#6b7280] hover:border-gray-300 hover:scale-105 active:scale-95'}`}
-                      >
-                        {s.nome}
-                      </button>
-                    );
-                  })}
-                </div>
-                {form.setores.length === 0 && <p className="text-xs text-[#9ca3af] mt-1">Nenhum setor selecionado = acesso a todos os setores</p>}
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-[#1f2937] text-sm">Status</p>
-                  <p className="text-xs text-[#6b7280]">{form.status ? 'Usuário ativo' : 'Usuário inativo'}</p>
-                </div>
-                <button
-                  onClick={() => setForm(f => ({ ...f, status: !f.status }))}
-                  className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors ${form.status ? 'bg-[#1e40af]' : 'bg-gray-300'}`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 shadow transition-all duration-200 ${form.status ? 'left-[22px]' : 'left-0.5'}`}></div>
-                </button>
+                <label className="block text-sm font-medium text-[#374151] mb-1">Setores (separados por vírgula)</label>
+                <input
+                  type="text"
+                  value={form.setores}
+                  onChange={e => setForm(f => ({ ...f, setores: e.target.value }))}
+                  placeholder="1, 2, 3"
+                  className="w-full bg-white border border-gray-200 text-[#1f2937] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1e40af] focus:ring-1 focus:ring-[#1e40af]/20 transition-colors"
+                />
+                <p className="text-xs text-[#9ca3af] mt-1">IDs dos setores separados por vírgula. Deixe vazio para todos.</p>
               </div>
             </div>
 
             <div className="p-6 border-t border-gray-100 flex gap-3">
-              <Button variant="secondary" className="flex-1" onClick={closeModal} disabled={saving}>Cancelar</Button>
-              <Button variant="primary" className="flex-1" onClick={handleSave} disabled={saving} loading={saving}>
-                {saving ? 'Salvando...' : formModal.mode === 'edit' ? 'Salvar' : 'Criar Usuário'}
+              <Button variant="secondary" className="flex-1" onClick={closeModal} disabled={isCreating || isUpdating}>Cancelar</Button>
+              <Button variant="primary" className="flex-1" onClick={handleSave} disabled={isCreating || isUpdating} loading={isCreating || isUpdating}>
+                {isCreating || isUpdating ? 'Salvando...' : formModal.mode === 'edit' ? 'Salvar' : 'Criar Usuário'}
               </Button>
             </div>
           </div>
@@ -375,70 +295,50 @@ export default function UsuariosPage() {
             <thead className="text-[#6b7280] text-xs uppercase font-semibold border-b border-gray-100">
               <tr>
                 <th className="px-6 py-4">Nome</th>
-                <th className="px-6 py-4">Cargos</th>
+                <th className="px-6 py-4">Cargo</th>
                 <th className="px-6 py-4">Setores</th>
-                <th className="px-6 py-4">Último Acesso</th>
-                <th className="px-6 py-4 text-center">Status</th>
+                <th className="px-6 py-4">Criado em</th>
                 <th className="px-6 py-4 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredUsers.map((user, idx) => {
-                const setorNames = user.setores.length > 0
-                  ? user.setores.map(id => SHARED_SETORES.find(s => s.id === id)?.nome).filter(Boolean).join(', ')
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-[#6b7280]">Carregando...</td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-[#6b7280]">Nenhum usuário encontrado.</td>
+                </tr>
+              ) : filteredUsers.map((user) => {
+                const setorNames = user.setores
+                  ? user.setores.split(',').filter(Boolean).map(s => s.trim()).join(', ')
                   : 'Todos';
                 return (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors opacity-0 animate-fade-in" style={{ animationDelay: `${idx * 0.03}s`, animationFillMode: 'forwards' }}>
+                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-[#1e40af] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                          {user.initials}
+                          {user.nome.slice(0, 2).toUpperCase()}
                         </div>
-                        <span className="text-[#1f2937] font-medium">{user.name}</span>
+                        <span className="text-[#1f2937] font-medium">{user.nome}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${getRolesColor(user.roles)}`}>
-                        {getRolesLabel(user.roles)}
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${getRolesColor(user.role)}`}>
+                        {getRolesLabel(user.role)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-[#6b7280] text-xs max-w-[140px]">{setorNames}</td>
-                    <td className="px-6 py-4 text-[#6b7280] text-xs">{user.lastAccess}</td>
-                    <td className="px-6 py-4 text-center">
-                      {loadingIndex === idx ? (
-                        <div className="flex items-center justify-center"><SpinnerIcon /></div>
-                      ) : user.status === 'Ativo' ? (
-                        <Badge variant="success" size="sm">Ativo</Badge>
-                      ) : (
-                        <Badge variant="info" size="sm">Inativo</Badge>
-                      )}
+                    <td className="px-6 py-4 text-[#6b7280] text-xs">
+                      {user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '-'}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
-                        <button
-                          title={user.status === 'Ativo' ? 'Inativar' : 'Ativar'}
-                          onClick={() => toggleStatus(idx)}
-                          disabled={loadingIndex === idx}
-                          className={`w-7 h-7 rounded border flex items-center justify-center transition-colors ${
-                            loadingIndex === idx
-                              ? 'opacity-50 cursor-not-allowed'
-                              : user.status === 'Ativo'
-                                ? 'border-amber-300 text-amber-600 hover:bg-amber-50'
-                                : 'border-green-300 text-green-600 hover:bg-green-50'
-                          }`}
-                        >
-                          {loadingIndex === idx ? (
-                            <SpinnerIcon />
-                          ) : user.status === 'Ativo' ? (
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" x2="19.07" y1="4.93" y2="19.07"/></svg>
-                          ) : (
-                            <CheckIcon className="text-green-600" />
-                          )}
-                        </button>
-                        <button onClick={() => openEdit(idx)} title="Editar" className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-[#1f2937] hover:border-[#1e40af] transition-colors">
+                        <button onClick={() => openEdit(user)} title="Editar" className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-[#1f2937] hover:border-[#1e40af] transition-colors">
                           <EditIcon />
                         </button>
-                        <button onClick={() => confirmDelete(idx)} title="Excluir" className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-red-600 hover:border-red-400 transition-colors">
+                        <button onClick={() => setDeleteModal({ show: true, user })} title="Excluir" className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center text-[#6b7280] hover:text-red-600 hover:border-red-400 transition-colors">
                           <DeleteIcon />
                         </button>
                       </div>

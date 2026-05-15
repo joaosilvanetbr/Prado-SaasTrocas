@@ -9,24 +9,13 @@ export const metadata: Metadata = {
   description: "Relatórios históricos de trocas por setor.",
 };
 
-const FALLBACK_DATES = ['2026-05-13', '2026-05-12', '2026-05-09'];
-
 export default async function RelatoriosPage() {
-  let availableDates: string[] = FALLBACK_DATES;
+  const datesResult = await db.select({ date: daily_reports.date })
+    .from(daily_reports)
+    .groupBy(daily_reports.date)
+    .orderBy(sql`${daily_reports.date} DESC`);
 
-  try {
-    const datesResult = await db.select({ date: daily_reports.date })
-      .from(daily_reports)
-      .groupBy(daily_reports.date)
-      .orderBy(sql`${daily_reports.date} DESC`);
-
-    const fetchedDates = datesResult.map(r => r.date as string);
-    if (fetchedDates.length > 0) {
-      availableDates = fetchedDates;
-    }
-  } catch {
-    availableDates = FALLBACK_DATES;
-  }
+  const availableDates = datesResult.map(r => r.date as string);
 
   return <RelatoriosClient initialDates={availableDates} />;
 }
