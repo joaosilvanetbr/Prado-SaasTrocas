@@ -2,9 +2,10 @@
 
 import { db } from '@/db';
 import { daily_reports, sectors } from '@/db/schema';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { getTodayDate } from '@/lib/format';
+import { calcularDiferenca, calcularPercentual, getStatusTrocas, type StatusTrocas } from '@/lib/performance';
 
 const sectorReportSchema = z.object({
   sector_id: z.number().int().positive(),
@@ -16,6 +17,19 @@ const saveDailyReportSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
   sectors: z.array(sectorReportSchema),
 });
+
+type StatusVariant = 'success' | 'warning' | 'error' | 'info';
+
+function getStatusVariant(status: StatusTrocas): StatusVariant {
+  switch (status) {
+    case 'otimo': return 'success';
+    case 'atencao': return 'warning';
+    case 'acima':
+    case 'critico': return 'error';
+    case 'sem_lancamento': return 'info';
+    default: return 'info';
+  }
+}
 
 export async function saveDailyReportAction(date: string, sectorsData: { sector_id: number; valor_realizado: number; valor_meta: number }[]) {
   const parseResult = saveDailyReportSchema.safeParse({ date, sectors: sectorsData });
@@ -66,29 +80,51 @@ export async function getReportsHistoryAction(startDate?: string, endDate?: stri
         sector: sectors,
       }).from(daily_reports).leftJoin(sectors, eq(daily_reports.sector_id, sectors.id))
         .where(and(gte(daily_reports.date, startDate), lte(daily_reports.date, endDate)))
-        .orderBy(daily_reports.date);
+        .orderBy(desc(daily_reports.date));
     } else if (startDate) {
       result = await db.select({
         report: daily_reports,
         sector: sectors,
       }).from(daily_reports).leftJoin(sectors, eq(daily_reports.sector_id, sectors.id))
         .where(gte(daily_reports.date, startDate))
-        .orderBy(daily_reports.date);
+        .orderBy(desc(daily_reports.date));
     } else if (endDate) {
       result = await db.select({
         report: daily_reports,
         sector: sectors,
       }).from(daily_reports).leftJoin(sectors, eq(daily_reports.sector_id, sectors.id))
         .where(lte(daily_reports.date, endDate))
-        .orderBy(daily_reports.date);
+        .orderBy(desc(daily_reports.date));
     } else {
       result = await db.select({
         report: daily_reports,
         sector: sectors,
       }).from(daily_reports).leftJoin(sectors, eq(daily_reports.sector_id, sectors.id))
-        .orderBy(daily_reports.date);
+        .orderBy(desc(daily_reports.date));
     }
-    return { success: true, reports: result };
+
+    const reports = result.map(r => {
+      const realizado = r.report?.valor_realizado ?? 0;
+      const meta = r.report?.valor_meta ?? 0;
+      const diferenca = calcularDiferenca(realizado, meta);
+      const percentual = calcularPercentual(realizado, meta);
+      const { status, color } = getStatusTrocas(realizado, meta, true);
+
+      return {
+        id: r.report?.id,
+        date: r.report?.date,
+        sectorId: r.sector?.id,
+        sectorName: r.sector?.nome,
+        realizado,
+        meta,
+        diferenca,
+        percentual,
+        status,
+        statusVariant: getStatusVariant(status),
+      };
+    });
+
+    return { success: true, reports };
   } catch (error) {
     console.error('Error getting reports history:', error);
     return { error: 'Database unavailable' };

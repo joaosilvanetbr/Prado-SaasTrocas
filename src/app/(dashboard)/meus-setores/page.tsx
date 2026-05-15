@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 export default async function MeusSetoresPage() {
   let userSetores: number[] = [];
   let isAdmin = false;
+  let totalSetores = 0;
 
   try {
     const cookieStore = await cookies();
@@ -27,9 +28,10 @@ export default async function MeusSetoresPage() {
       isAdmin = userRoles.includes('admin');
     }
 
-    await db.select().from(sectors);
+    const allSectors = await db.select().from(sectors);
+    totalSetores = allSectors.length;
   } catch {
   }
 
-  return <MeusSetoresClient userSetores={userSetores} isAdmin={isAdmin} />;
+  return <MeusSetoresClient userSetores={userSetores} isAdmin={isAdmin} totalSetores={totalSetores} />;
 }
