@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { sectors, daily_reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import type { Metadata } from 'next';
+import { getTodayDate } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: "Lançamentos | Prado Trocas",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LancamentosPage() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDate();
 
   const allSectors = await db.select().from(sectors);
   const todayReports = await db.select().from(daily_reports).where(eq(daily_reports.date, today));

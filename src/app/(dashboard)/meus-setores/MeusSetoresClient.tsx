@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, getTodayDate } from '@/lib/format';
 import KPIGroup from '@/components/ui/KPICard';
 import Badge from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
@@ -26,7 +26,7 @@ export default function MeusSetoresClient({ userSetores, isAdmin }: MeusSetoresC
 
   const { data: historyData, isLoading } = useReportsHistory();
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDate();
 
   const getSectorsByDate = (dateKey: string): Sector[] => {
     if (!historyData) return [];

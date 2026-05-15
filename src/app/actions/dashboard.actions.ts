@@ -1,9 +1,10 @@
 import { db } from '@/db';
 import { sectors, daily_reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { getTodayDate } from '@/lib/format';
 
 export async function getDashboardData() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDate();
 
   const allSectors = await db.select().from(sectors);
   const todayReports = await db.select().from(daily_reports).where(eq(daily_reports.date, today));

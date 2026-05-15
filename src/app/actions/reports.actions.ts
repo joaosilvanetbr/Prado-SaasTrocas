@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { daily_reports, sectors } from '@/db/schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
+import { getTodayDate } from '@/lib/format';
 
 const sectorReportSchema = z.object({
   sector_id: z.number().int().positive(),
@@ -15,10 +16,6 @@ const saveDailyReportSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
   sectors: z.array(sectorReportSchema),
 });
-
-function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0];
-}
 
 export async function saveDailyReportAction(date: string, sectorsData: { sector_id: number; valor_realizado: number; valor_meta: number }[]) {
   const parseResult = saveDailyReportSchema.safeParse({ date, sectors: sectorsData });

@@ -6,6 +6,10 @@ export function formatCurrency(value: number): string {
   }).format(value);
 }
 
+export function getTodayDate(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
 export function formatPercent(value: number, decimals = 1): string {
   return `${value.toFixed(decimals)}%`;
 }
