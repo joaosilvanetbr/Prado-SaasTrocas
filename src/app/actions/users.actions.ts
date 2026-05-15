@@ -8,6 +8,11 @@ import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { SignJWT } from 'jose';
 import { getJwtSecret } from '@/lib/env';
+import { sanitizeString, isSafeString } from '@/lib/sanitize';
+
+// ============================================
+// SCHEMAS DE VALIDAÇÃO
+// ============================================
 
 const createUserSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(100),
@@ -125,20 +130,26 @@ export async function createUserAction(formData: FormData) {
 
   const { nome, password, role, setores } = parseResult.data;
 
+  // Validar e sanitizar nome
+  if (!isSafeString(nome)) {
+    return { error: 'Nome contém caracteres inválidos' };
+  }
+  const sanitizedNome = sanitizeString(nome);
+
   // Validate role
   if (!['admin', 'gerente', 'comprador'].includes(role)) {
     return { error: 'Cargo inválido. Use: admin, gerente ou comprador' };
   }
 
   try {
-    const existing = await db.select().from(users).where(eq(users.nome, nome)).limit(1);
+    const existing = await db.select().from(users).where(eq(users.nome, sanitizedNome)).limit(1);
     if (existing.length > 0) {
       return { error: 'Usuário já cadastrado' };
     }
 
     const password_hash = await bcrypt.hash(password, 10);
     const result = await db.insert(users).values({ 
-      nome, 
+      nome: sanitizedNome, 
       password_hash, 
       role, 
       setores: setores || '' 

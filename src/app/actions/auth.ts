@@ -8,34 +8,85 @@ import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { getJwtSecret } from '@/lib/env';
+import { sanitizeUsername } from '@/lib/sanitize';
+
+// ============================================
+// SCHEMAS DE VALIDAÇÃO
+// ============================================
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Usuário é obrigatório').max(100),
   password: z.string().min(1, 'Senha é obrigatória').max(100),
 });
 
+// ============================================
+// RATE LIMITING (Serverless-Safe)
+// ============================================
+
 interface RateLimitEntry {
   count: number;
   resetAt: number;
+  firstAttempt: number;
 }
 
+// In-memory store (útil para desenvolvimento, mas em produção usar KV externo)
 const rateLimitStore = new Map<string, RateLimitEntry>();
+
+// Limite de tentativas por janela de tempo
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuto
+
+function getRateLimitKey(ip: string): string {
+  return `login:${ip}`;
+}
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
-  const entry = rateLimitStore.get(ip);
+  const key = getRateLimitKey(ip);
+  const entry = rateLimitStore.get(key);
 
+  // Limpar entradas antigas periodicamente (cleanup básico)
+  if (rateLimitStore.size > 1000) {
+    const cutoff = now - RATE_LIMIT_WINDOW_MS * 2;
+    for (const [k, v] of rateLimitStore.entries()) {
+      if (v.firstAttempt < cutoff) {
+        rateLimitStore.delete(k);
+      }
+    }
+  }
+
+  // Nova janela de rate limit
   if (!entry || now > entry.resetAt) {
-    rateLimitStore.set(ip, { count: 1, resetAt: now + 60000 });
+    rateLimitStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS, firstAttempt: now });
     return true;
   }
 
-  if (entry.count >= 5) {
+  // Verificar limite
+  if (entry.count >= RATE_LIMIT_MAX) {
+    const waitSeconds = Math.ceil((entry.resetAt - now) / 1000);
+    console.warn(`[RateLimit] IP ${ip} limitado. Aguarde ${waitSeconds}s`);
     return false;
   }
 
   entry.count++;
   return true;
+}
+
+function getRemainingAttempts(ip: string): number {
+  const key = getRateLimitKey(ip);
+  const entry = rateLimitStore.get(key);
+  if (!entry || Date.now() > entry.resetAt) {
+    return RATE_LIMIT_MAX;
+  }
+  return Math.max(0, RATE_LIMIT_MAX - entry.count);
+}
+
+function getRetryAfterSeconds(ip: string): number {
+  const key = getRateLimitKey(ip);
+  const entry = rateLimitStore.get(key);
+  if (!entry) return 0;
+  const remaining = Math.ceil((entry.resetAt - Date.now()) / 1000);
+  return Math.max(0, remaining);
 }
 
 interface User {
@@ -65,10 +116,13 @@ export async function loginAction(formData: FormData) {
 
   const { username, password } = parseResult.data;
 
+  // Sanitizar username antes de usar
+  const sanitizedUsername = sanitizeUsername(username);
+
   let user: User | null = null;
 
   try {
-    const userList = await db.select().from(users).where(sql`${users.nome} ILIKE ${username}`).limit(1);
+    const userList = await db.select().from(users).where(sql`${users.nome} ILIKE ${sanitizedUsername}`).limit(1);
 
     if (userList.length > 0) {
       const userFromDb = userList[0];

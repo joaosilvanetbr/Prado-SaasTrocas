@@ -5,16 +5,26 @@ import { sectors, users, daily_reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
+// ============================================
+// SCHEMAS DE VALIDAÇÃO (Zod)
+// ============================================
+
 const createSectorSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(100),
   meta: z.number().min(0).default(0),
-  comprador_id: z.number().int().positive().nullable().optional(),
+  comprador_id: z.union([
+    z.string().transform(v => v === '' ? null : parseInt(v)),
+    z.number().int().positive().nullable(),
+  ]).optional().default(null),
 });
 
 const updateSectorSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(100).optional(),
   meta: z.number().min(0).optional(),
-  comprador_id: z.number().int().positive().nullable().optional(),
+  comprador_id: z.union([
+    z.string().transform(v => v === '' ? null : parseInt(v)),
+    z.number().int().positive().nullable(),
+  ]).optional(),
 });
 
 export async function createSectorAction(formData: FormData) {

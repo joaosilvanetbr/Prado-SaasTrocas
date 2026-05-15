@@ -34,11 +34,11 @@ export function useAuth(): UseAuthReturn {
           return;
         }
 
-        const response = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        });
+      // Enviar requisição com credentials (envia cookie automaticamente)
+      const response = await fetch('/api/auth/verify', {
+        method: 'POST',
+        credentials: 'include', // Importante: envia cookies
+      });
 
         if (!response.ok) {
           setUser(null);
