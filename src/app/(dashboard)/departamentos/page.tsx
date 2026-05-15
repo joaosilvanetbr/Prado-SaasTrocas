@@ -13,7 +13,7 @@ interface Setor {
   id: number;
   nome: string;
   comprador_id: number | null;
-  created_at?: Date;
+  created_at?: Date | null;
 }
 
 export default function DepartamentosPage() {
