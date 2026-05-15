@@ -6,10 +6,12 @@ export type Database = ReturnType<typeof drizzle>;
 
 const connectionString = process.env.DATABASE_URL!;
 
-export const postgresClient = postgres(connectionString, { 
+export const postgresClient = postgres(connectionString, {
   max: 1,
   idle_timeout: 20,
   connect_timeout: 10,
+  ssl: 'require',
+  keep_alive: true,
 });
 
 export const db = drizzle(postgresClient, { schema });

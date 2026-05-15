@@ -2,7 +2,7 @@
 
 import { db } from '@/db';
 import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
@@ -68,7 +68,7 @@ export async function loginAction(formData: FormData) {
   let user: User | null = null;
 
   try {
-    const userList = await db.select().from(users).where(eq(users.nome, username)).limit(1);
+    const userList = await db.select().from(users).where(sql`${users.nome} ILIKE ${username}`).limit(1);
 
     if (userList.length > 0) {
       const userFromDb = userList[0];
