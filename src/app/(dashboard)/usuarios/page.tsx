@@ -13,7 +13,7 @@ interface User {
   password_hash?: string;
   role: string;
   setores: string;
-  created_at?: Date;
+  created_at?: Date | null;
 }
 
 const ALL_ROLES = [
