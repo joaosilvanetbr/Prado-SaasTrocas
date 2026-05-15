@@ -8,6 +8,20 @@
       "when": 1778802189594,
       "tag": "0000_nappy_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778803200000,
+      "tag": "0001_drop_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778803206217,
+      "tag": "0002_lame_dragon_man",
+      "breakpoints": true
     }
   ]
 }
