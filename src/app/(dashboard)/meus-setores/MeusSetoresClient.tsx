@@ -32,19 +32,23 @@ export default function MeusSetoresClient({ userSetores, isAdmin }: MeusSetoresC
     if (!historyData) return [];
 
     const filtered = historyData.filter((r: unknown) => {
-      const report = (r as { date: string }).date;
-      if (dateKey === 'today') return report === today;
-      return report === dateKey;
+      const report = (r as { report: { date: string } }).report;
+      if (dateKey === 'today') return report?.date === today;
+      return report?.date === dateKey;
     });
 
     const sectorsMap = new Map<number, Sector>();
-    for (const r of filtered as { sector: { id: number; nome: string }; report: { valor_realizado: number; valor_meta: number } }[]) {
-      if (isAdmin || userSetores.length === 0 || userSetores.includes(r.sector?.id)) {
-        sectorsMap.set(r.sector?.id, {
-          id: r.sector?.id,
-          nome: r.sector?.nome,
-          meta: r.report?.valor_meta ?? 0,
-          realizado: r.report?.valor_realizado ?? 0,
+    for (const r of filtered as { sector: { id: number; nome: string }; report: { date: string; valor_realizado: number; valor_meta: number } }[]) {
+      const sectorId = r.sector?.id;
+      const sectorNome = r.sector?.nome;
+      const reportData = r.report;
+      
+      if (isAdmin || userSetores.length === 0 || (sectorId && userSetores.includes(sectorId))) {
+        sectorsMap.set(sectorId, {
+          id: sectorId,
+          nome: sectorNome,
+          meta: reportData?.valor_meta ?? 0,
+          realizado: reportData?.valor_realizado ?? 0,
         });
       }
     }
