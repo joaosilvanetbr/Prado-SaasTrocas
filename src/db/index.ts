@@ -11,7 +11,7 @@ export const postgresClient = postgres(connectionString, {
   idle_timeout: 20,
   connect_timeout: 10,
   ssl: 'require',
-  keep_alive: true,
+  keep_alive: 30000,
 });
 
 export const db = drizzle(postgresClient, { schema });
